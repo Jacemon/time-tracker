@@ -4,7 +4,7 @@ from app.application.auth_service import AuthService
 from app.application.timer_service import TimerService
 from app.domain.entities import SessionType
 from app.presentation.api.dependencies import get_auth_service, get_current_user_id, get_timer_service
-from app.presentation.api.schemas import SessionResponse, SessionUpdateRequest, StatusResponse, SummaryResponse, TokenResponse, UserAuthRequest
+from app.presentation.api.schemas import SessionCreateRequest, SessionResponse, SessionUpdateRequest, StatusResponse, SummaryResponse, TokenResponse, UserAuthRequest
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 timer_router = APIRouter(prefix="/timer", tags=["Timer"])
@@ -68,6 +68,22 @@ async def get_summary(
   timer_service: TimerService = Depends(get_timer_service)
 ):
   return await timer_service.get_today_summary(user_id)
+
+@timer_router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+async def create_session(
+  data: SessionCreateRequest,
+  user_id: int = Depends(get_current_user_id),
+  timer_service: TimerService = Depends(get_timer_service)
+):
+  try:
+    return await timer_service.create_manual_session(
+      user_id=user_id,
+      session_type=data.session_type,
+      start_time=data.start_time,
+      end_time=data.end_time
+    )
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @timer_router.patch("/sessions/{session_id}", response_model=SessionResponse)
 async def update_session(

@@ -211,6 +211,11 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
   border-radius: 6px;
 }
 
+.add-btn {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 .icon-btn.del:hover {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;

@@ -59,6 +59,24 @@ class TimerService:
       "total_seconds": work_seconds + break_seconds
     }
 
+  async def create_manual_session(
+    self,
+    user_id: int,
+    session_type: SessionType,
+    start_time: datetime,
+    end_time: datetime
+  ) -> TimeSession:
+    if end_time <= start_time:
+      raise ValueError("End time must be after start time")
+    new_session = TimeSession(
+      id=None,
+      user_id=user_id,
+      session_type=session_type,
+      start_time=start_time,
+      end_time=end_time
+    )
+    return await self.session_repo.create(new_session)
+
   async def update_session(
     self,
     user_id: int,

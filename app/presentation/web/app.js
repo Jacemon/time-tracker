@@ -17,6 +17,7 @@ const todayBreakDisplay = document.getElementById('today-break');
 const todayTotalDisplay = document.getElementById('today-total');
 
 const editModal = document.getElementById('edit-modal');
+const modalTitle = document.getElementById('modal-title');
 const editTypeInput = document.getElementById('edit-type');
 const editStartInput = document.getElementById('edit-start');
 const editEndInput = document.getElementById('edit-end');
@@ -144,8 +145,22 @@ function logout() {
   appSection.classList.add('hidden');
 }
 
+function openAddModal() {
+  editingSessionId = null;
+  modalTitle.textContent = 'Добавить запись';
+  editError.textContent = '';
+  editTypeInput.value = 'WORK';
+  const now = new Date();
+  const hourAgo = new Date(now.getTime() - 3600000);
+  editStartInput.value = toLocalInputString(hourAgo.toISOString());
+  editEndInput.value = toLocalInputString(now.toISOString());
+  editEndInput.disabled = false;
+  editModal.classList.remove('hidden');
+}
+
 function openEditModal(session) {
   editingSessionId = session.id;
+  modalTitle.textContent = 'Редактировать запись';
   editError.textContent = '';
   editTypeInput.value = session.session_type;
   editStartInput.value = toLocalInputString(session.start_time);
@@ -285,6 +300,7 @@ async function initApp() {
 document.getElementById('login-btn').addEventListener('click', () => handleAuth('login'));
 document.getElementById('register-btn').addEventListener('click', () => handleAuth('register'));
 document.getElementById('logout-btn').addEventListener('click', logout);
+document.getElementById('add-record-btn').addEventListener('click', openAddModal);
 
 document.getElementById('work-btn').addEventListener('click', async () => {
   const session = await apiRequest('/timer/work', 'POST');
@@ -321,7 +337,11 @@ document.getElementById('save-edit-btn').addEventListener('click', async () => {
     if (!editEndInput.disabled && editEndInput.value) {
       payload.end_time = new Date(editEndInput.value).toISOString();
     }
-    await apiRequest(`/timer/sessions/${editingSessionId}`, 'PATCH', payload);
+    if (editingSessionId === null) {
+      await apiRequest('/timer/sessions', 'POST', payload);
+    } else {
+      await apiRequest(`/timer/sessions/${editingSessionId}`, 'PATCH', payload);
+    }
     editModal.classList.add('hidden');
     await refreshAll();
   } catch (err) {
