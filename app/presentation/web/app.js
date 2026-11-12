@@ -13,6 +13,7 @@ const timerDisplay = document.getElementById('timer-display');
 const statusBadge = document.getElementById('status-badge');
 const workBtn = document.getElementById('work-btn');
 const breakBtn = document.getElementById('break-btn');
+const stopBtn = document.getElementById('stop-btn');
 const historyContainer = document.getElementById('history-container');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
@@ -95,12 +96,14 @@ function setUIState(session) {
   clearInterval(timerInterval);
   workBtn.disabled = false;
   breakBtn.disabled = false;
+  stopBtn.disabled = false;
   workBtn.classList.remove('btn-expanded');
   breakBtn.classList.remove('btn-expanded');
 
   if (!session) {
     activeStartTime = null;
     activeType = null;
+    stopBtn.disabled = true;
     statusBadge.textContent = 'Не активно';
     statusBadge.className = 'badge idle';
     timerDisplay.textContent = '00:00:00';
