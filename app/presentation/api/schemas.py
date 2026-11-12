@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from app.domain.entities import SessionType
 
@@ -35,3 +35,23 @@ class SummaryResponse(BaseModel):
   work_seconds: int
   break_seconds: int
   total_seconds: int
+
+class SettingsResponse(BaseModel):
+  default_work_minutes: int
+  default_break_minutes: int
+  weekend_days: List[int]
+
+class SettingsUpdateRequest(BaseModel):
+  default_work_minutes: int
+  default_break_minutes: int
+  weekend_days: List[int]
+
+class DailyNormResponse(BaseModel):
+  date_str: str
+  work_minutes: int
+  break_minutes: int
+
+class DailyNormRequest(BaseModel):
+  date_str: str
+  work_minutes: int
+  break_minutes: int

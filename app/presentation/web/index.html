@@ -25,7 +25,12 @@
     <div id="app-section" class="hidden">
       <header class="header">
         <span id="user-display"></span>
-        <button id="logout-btn" class="small">Выйти</button>
+        <div class="header-actions">
+          <button id="settings-btn" class="icon-btn" title="Настройки">
+            <img src="/static/icons/settings.svg" class="icon" alt="">
+          </button>
+          <button id="logout-btn" class="small">Выйти</button>
+        </div>
       </header>
 
       <div class="tabs">
@@ -87,8 +92,8 @@
             <strong id="stat-week-break" class="summary-value break-text">00:00:00</strong>
           </div>
           <div class="card summary-card">
-            <span class="summary-label">Среднее в день</span>
-            <strong id="stat-week-avg" class="summary-value total-text">00:00:00</strong>
+            <span class="summary-label">Баланс (7 дн.)</span>
+            <strong id="stat-week-balance" class="summary-value">+00:00:00</strong>
           </div>
         </div>
 
@@ -106,6 +111,10 @@
             <div class="stat-row">
               <span>Всего зафиксировано</span>
               <strong id="stat-month-total" class="total-text">00:00:00</strong>
+            </div>
+            <div class="stat-row">
+              <span>Баланс (переработка)</span>
+              <strong id="stat-month-balance">+00:00:00</strong>
             </div>
             <div class="stat-row">
               <span>Активных дней</span>
@@ -134,6 +143,46 @@
         <button id="cancel-edit-btn" class="secondary">Отмена</button>
       </div>
       <p id="edit-error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content card">
+      <h2>Настройки по умолчанию</h2>
+      <label class="field-label">Норма работы в день</label>
+      <input type="time" id="set-work-time" value="08:00">
+      <label class="field-label">Норма перерыва в день</label>
+      <input type="time" id="set-break-time" value="00:40">
+      <label class="field-label">Выходные дни (норма 00:00)</label>
+      <div class="weekdays-grid" id="set-weekends">
+        <label class="day-check"><input type="checkbox" value="0"><span>Пн</span></label>
+        <label class="day-check"><input type="checkbox" value="1"><span>Вт</span></label>
+        <label class="day-check"><input type="checkbox" value="2"><span>Ср</span></label>
+        <label class="day-check"><input type="checkbox" value="3"><span>Чт</span></label>
+        <label class="day-check"><input type="checkbox" value="4"><span>Пт</span></label>
+        <label class="day-check"><input type="checkbox" value="5" checked><span>Сб</span></label>
+        <label class="day-check"><input type="checkbox" value="6" checked><span>Вс</span></label>
+      </div>
+      <div class="btn-group">
+        <button id="save-settings-btn" class="primary">Сохранить</button>
+        <button id="cancel-settings-btn" class="secondary">Отмена</button>
+      </div>
+      <p id="settings-error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="day-norm-modal" class="modal hidden">
+    <div class="modal-content card">
+      <h2 id="day-norm-title">Норма на день</h2>
+      <label class="field-label">Норма работы</label>
+      <input type="time" id="day-work-time" value="08:00">
+      <label class="field-label">Норма перерыва</label>
+      <input type="time" id="day-break-time" value="00:40">
+      <div class="btn-group">
+        <button id="save-day-norm-btn" class="primary">Сохранить</button>
+        <button id="cancel-day-norm-btn" class="secondary">Отмена</button>
+      </div>
+      <p id="day-norm-error" class="error"></p>
     </div>
   </div>
 

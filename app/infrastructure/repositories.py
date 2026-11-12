@@ -1,9 +1,9 @@
 from typing import List, Optional
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.entities import TimeSession, User
-from app.domain.repositories import ISessionRepository, IUserRepository
-from app.infrastructure.models import TimeSessionModel, UserModel
+from app.domain.entities import DailyNorm, TimeSession, User, UserSettings
+from app.domain.repositories import ISessionRepository, ISettingsRepository, IUserRepository
+from app.infrastructure.models import DailyNormModel, TimeSessionModel, UserModel, UserSettingsModel
 
 class PostgresUserRepository(IUserRepository):
   def __init__(self, db: AsyncSession):
@@ -109,3 +109,85 @@ class PostgresSessionRepository(ISessionRepository):
       )
       for m in models
     ]
+
+class PostgresSettingsRepository(ISettingsRepository):
+  def __init__(self, db: AsyncSession):
+    self.db = db
+
+  async def get_settings(self, user_id: int) -> UserSettings:
+    result = await self.db.execute(select(UserSettingsModel).where(UserSettingsModel.user_id == user_id))
+    model = result.scalar_one_or_none()
+    if not model:
+      return UserSettings(user_id=user_id)
+    return UserSettings(
+      user_id=model.user_id,
+      default_work_minutes=model.default_work_minutes,
+      default_break_minutes=model.default_break_minutes,
+      weekend_days=model.weekend_days
+    )
+
+  async def save_settings(self, settings: UserSettings) -> UserSettings:
+    result = await self.db.execute(select(UserSettingsModel).where(UserSettingsModel.user_id == settings.user_id))
+    model = result.scalar_one_or_none()
+    if not model:
+      model = UserSettingsModel(
+        user_id=settings.user_id,
+        default_work_minutes=settings.default_work_minutes,
+        default_break_minutes=settings.default_break_minutes,
+        weekend_days=settings.weekend_days
+      )
+      self.db.add(model)
+    else:
+      model.default_work_minutes = settings.default_work_minutes
+      model.default_break_minutes = settings.default_break_minutes
+      model.weekend_days = settings.weekend_days
+    await self.db.commit()
+    await self.db.refresh(model)
+    return UserSettings(
+      user_id=model.user_id,
+      default_work_minutes=model.default_work_minutes,
+      default_break_minutes=model.default_break_minutes,
+      weekend_days=model.weekend_days
+    )
+
+  async def get_daily_norms(self, user_id: int) -> List[DailyNorm]:
+    result = await self.db.execute(select(DailyNormModel).where(DailyNormModel.user_id == user_id))
+    models = result.scalars().all()
+    return [
+      DailyNorm(
+        id=m.id,
+        user_id=m.user_id,
+        date_str=m.date_str,
+        work_minutes=m.work_minutes,
+        break_minutes=m.break_minutes
+      )
+      for m in models
+    ]
+
+  async def save_daily_norm(self, norm: DailyNorm) -> DailyNorm:
+    query = select(DailyNormModel).where(
+      DailyNormModel.user_id == norm.user_id,
+      DailyNormModel.date_str == norm.date_str
+    )
+    result = await self.db.execute(query)
+    model = result.scalar_one_or_none()
+    if not model:
+      model = DailyNormModel(
+        user_id=norm.user_id,
+        date_str=norm.date_str,
+        work_minutes=norm.work_minutes,
+        break_minutes=norm.break_minutes
+      )
+      self.db.add(model)
+    else:
+      model.work_minutes = norm.work_minutes
+      model.break_minutes = norm.break_minutes
+    await self.db.commit()
+    await self.db.refresh(model)
+    return DailyNorm(
+      id=model.id,
+      user_id=model.user_id,
+      date_str=model.date_str,
+      work_minutes=model.work_minutes,
+      break_minutes=model.break_minutes
+    )

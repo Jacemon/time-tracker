@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from app.infrastructure.database import Base, engine
 from app.infrastructure import models
-from app.presentation.api.routers import auth_router, timer_router
+from app.presentation.api.routers import auth_router, settings_router, timer_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,6 +16,7 @@ app = FastAPI(title="Time Tracker API", lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(timer_router)
+app.include_router(settings_router)
 
 app.mount("/static", StaticFiles(directory="app/presentation/web"), name="static")
 

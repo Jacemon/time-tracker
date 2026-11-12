@@ -1,13 +1,27 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.application.auth_service import AuthService
+from app.application.settings_service import SettingsService
 from app.application.timer_service import TimerService
 from app.domain.entities import SessionType
-from app.presentation.api.dependencies import get_auth_service, get_current_user_id, get_timer_service
-from app.presentation.api.schemas import SessionCreateRequest, SessionResponse, SessionUpdateRequest, StatusResponse, SummaryResponse, TokenResponse, UserAuthRequest
+from app.presentation.api.dependencies import get_auth_service, get_current_user_id, get_settings_service, get_timer_service
+from app.presentation.api.schemas import (
+  DailyNormRequest,
+  DailyNormResponse,
+  SessionCreateRequest,
+  SessionResponse,
+  SessionUpdateRequest,
+  SettingsResponse,
+  SettingsUpdateRequest,
+  StatusResponse,
+  SummaryResponse,
+  TokenResponse,
+  UserAuthRequest
+)
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 timer_router = APIRouter(prefix="/timer", tags=["Timer"])
+settings_router = APIRouter(prefix="/settings", tags=["Settings"])
 
 @auth_router.post("/register", response_model=TokenResponse)
 async def register(data: UserAuthRequest, auth_service: AuthService = Depends(get_auth_service)):
@@ -114,3 +128,74 @@ async def delete_session(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+@settings_router.get("", response_model=SettingsResponse)
+async def get_settings(
+  user_id: int = Depends(get_current_user_id),
+  settings_service: SettingsService = Depends(get_settings_service)
+):
+  settings = await settings_service.get_settings(user_id)
+  weekend_list = [int(x) for x in settings.weekend_days.split(",") if x.strip()]
+  return SettingsResponse(
+    default_work_minutes=settings.default_work_minutes,
+    default_break_minutes=settings.default_break_minutes,
+    weekend_days=weekend_list
+  )
+
+@settings_router.put("", response_model=SettingsResponse)
+async def update_settings(
+  data: SettingsUpdateRequest,
+  user_id: int = Depends(get_current_user_id),
+  settings_service: SettingsService = Depends(get_settings_service)
+):
+  try:
+    settings = await settings_service.update_settings(
+      user_id=user_id,
+      default_work_minutes=data.default_work_minutes,
+      default_break_minutes=data.default_break_minutes,
+      weekend_days=data.weekend_days
+    )
+    weekend_list = [int(x) for x in settings.weekend_days.split(",") if x.strip()]
+    return SettingsResponse(
+      default_work_minutes=settings.default_work_minutes,
+      default_break_minutes=settings.default_break_minutes,
+      weekend_days=weekend_list
+    )
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@settings_router.get("/daily-norms", response_model=List[DailyNormResponse])
+async def get_daily_norms(
+  user_id: int = Depends(get_current_user_id),
+  settings_service: SettingsService = Depends(get_settings_service)
+):
+  norms = await settings_service.get_daily_norms(user_id)
+  return [
+    DailyNormResponse(
+      date_str=n.date_str,
+      work_minutes=n.work_minutes,
+      break_minutes=n.break_minutes
+    )
+    for n in norms
+  ]
+
+@settings_router.put("/daily-norms", response_model=DailyNormResponse)
+async def set_daily_norm(
+  data: DailyNormRequest,
+  user_id: int = Depends(get_current_user_id),
+  settings_service: SettingsService = Depends(get_settings_service)
+):
+  try:
+    norm = await settings_service.set_daily_norm(
+      user_id=user_id,
+      date_str=data.date_str,
+      work_minutes=data.work_minutes,
+      break_minutes=data.break_minutes
+    )
+    return DailyNormResponse(
+      date_str=norm.date_str,
+      work_minutes=norm.work_minutes,
+      break_minutes=norm.break_minutes
+    )
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

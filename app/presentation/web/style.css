@@ -424,3 +424,73 @@ button.btn-expanded {
   border-bottom: none;
   padding-bottom: 0;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer.overtime {
+  color: #ef4444;
+}
+
+.overtime-text {
+  color: #ef4444 !important;
+}
+
+.balance-pos {
+  color: #10b981;
+}
+
+.balance-neg {
+  color: #ef4444;
+}
+
+.day-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-norm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 4px 6px;
+  background: #2a2a2a;
+  border-radius: 6px;
+}
+
+.day-norm-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+.weekdays-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.day-check {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #2a2a2a;
+  padding: 8px 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.day-check input {
+  width: auto;
+  margin: 0;
+  accent-color: #3b82f6;
+}

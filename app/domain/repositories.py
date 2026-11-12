@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from app.domain.entities import TimeSession, User
+from app.domain.entities import DailyNorm, TimeSession, User, UserSettings
 
 class IUserRepository(ABC):
   @abstractmethod
@@ -34,4 +34,21 @@ class ISessionRepository(ABC):
 
   @abstractmethod
   async def get_user_sessions(self, user_id: int) -> List[TimeSession]:
+    pass
+
+class ISettingsRepository(ABC):
+  @abstractmethod
+  async def get_settings(self, user_id: int) -> UserSettings:
+    pass
+
+  @abstractmethod
+  async def save_settings(self, settings: UserSettings) -> UserSettings:
+    pass
+
+  @abstractmethod
+  async def get_daily_norms(self, user_id: int) -> List[DailyNorm]:
+    pass
+
+  @abstractmethod
+  async def save_daily_norm(self, norm: DailyNorm) -> DailyNorm:
     pass
