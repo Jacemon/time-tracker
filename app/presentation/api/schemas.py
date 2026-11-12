@@ -20,3 +20,7 @@ class SessionResponse(BaseModel):
 
 class StatusResponse(BaseModel):
   active_session: Optional[SessionResponse] = None
+
+class SummaryResponse(BaseModel):
+  work_seconds: int
+  break_seconds: int

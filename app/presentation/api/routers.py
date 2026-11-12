@@ -4,7 +4,7 @@ from app.application.auth_service import AuthService
 from app.application.timer_service import TimerService
 from app.domain.entities import SessionType
 from app.presentation.api.dependencies import get_auth_service, get_current_user_id, get_timer_service
-from app.presentation.api.schemas import SessionResponse, StatusResponse, TokenResponse, UserAuthRequest
+from app.presentation.api.schemas import SessionResponse, StatusResponse, SummaryResponse, TokenResponse, UserAuthRequest
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 timer_router = APIRouter(prefix="/timer", tags=["Timer"])
@@ -61,3 +61,10 @@ async def get_history(
   timer_service: TimerService = Depends(get_timer_service)
 ):
   return await timer_service.get_history(user_id)
+
+@timer_router.get("/summary", response_model=SummaryResponse)
+async def get_summary(
+  user_id: int = Depends(get_current_user_id),
+  timer_service: TimerService = Depends(get_timer_service)
+):
+  return await timer_service.get_today_summary(user_id)

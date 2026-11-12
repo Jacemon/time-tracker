@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 from app.domain.entities import SessionType, TimeSession
 from app.domain.repositories import ISessionRepository
 
@@ -35,3 +35,25 @@ class TimerService:
 
   async def get_history(self, user_id: int) -> List[TimeSession]:
     return await self.session_repo.get_user_sessions(user_id)
+
+  async def get_today_summary(self, user_id: int) -> Dict[str, int]:
+    now = datetime.now(timezone.utc)
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    sessions = await self.session_repo.get_user_sessions(user_id)
+    work_seconds = 0
+    break_seconds = 0
+    for s in sessions:
+      end = s.end_time if s.end_time else now
+      if end <= day_start:
+        continue
+      effective_start = max(s.start_time, day_start)
+      duration = int((end - effective_start).total_seconds())
+      if duration > 0:
+        if s.session_type == SessionType.WORK:
+          work_seconds += duration
+        elif s.session_type == SessionType.BREAK:
+          break_seconds += duration
+    return {
+      "work_seconds": work_seconds,
+      "break_seconds": break_seconds
+    }

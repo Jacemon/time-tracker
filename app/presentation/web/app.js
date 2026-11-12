@@ -1,6 +1,9 @@
 let token = localStorage.getItem('token');
 let timerInterval = null;
 let activeStartTime = null;
+let activeType = null;
+let baseWorkSeconds = 0;
+let baseBreakSeconds = 0;
 
 const authSection = document.getElementById('auth-section');
 const appSection = document.getElementById('app-section');
@@ -8,6 +11,8 @@ const authError = document.getElementById('auth-error');
 const timerDisplay = document.getElementById('timer-display');
 const statusBadge = document.getElementById('status-badge');
 const historyList = document.getElementById('history-list');
+const todayWorkDisplay = document.getElementById('today-work');
+const todayBreakDisplay = document.getElementById('today-break');
 
 async function apiRequest(url, method = 'GET', body = null) {
   const headers = { 'Content-Type': 'application/json' };
@@ -38,29 +43,56 @@ function formatDuration(ms) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+function parseJwt(token) {
+  const base64Url = token.split('.');
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  return JSON.parse(atob(base64));
+}
+
+function renderSummary(elapsedSeconds = 0) {
+  const currentWork = baseWorkSeconds + (activeType === 'WORK' ? elapsedSeconds : 0);
+  const currentBreak = baseBreakSeconds + (activeType === 'BREAK' ? elapsedSeconds : 0);
+  todayWorkDisplay.textContent = formatDuration(currentWork * 1000);
+  todayBreakDisplay.textContent = formatDuration(currentBreak * 1000);
+}
+
 function updateTimerTick() {
   if (!activeStartTime) {
     timerDisplay.textContent = '00:00:00';
+    renderSummary(0);
     return;
   }
   const diff = Date.now() - activeStartTime.getTime();
   timerDisplay.textContent = formatDuration(diff);
+  renderSummary(Math.max(0, Math.floor(diff / 1000)));
 }
 
 function setUIState(session) {
   clearInterval(timerInterval);
   if (!session) {
     activeStartTime = null;
+    activeType = null;
     statusBadge.textContent = 'Не активно';
     statusBadge.className = 'badge idle';
     timerDisplay.textContent = '00:00:00';
+    renderSummary(0);
     return;
   }
   activeStartTime = new Date(session.start_time);
+  activeType = session.session_type;
   statusBadge.textContent = session.session_type === 'WORK' ? 'Работа' : 'Перерыв';
   statusBadge.className = `badge ${session.session_type}`;
   updateTimerTick();
   timerInterval = setInterval(updateTimerTick, 1000);
+}
+
+async function loadSummary() {
+  const summary = await apiRequest('/timer/summary');
+  if (!summary) return;
+  const currentElapsed = activeStartTime ? Math.max(0, Math.floor((Date.now() - activeStartTime.getTime()) / 1000)) : 0;
+  baseWorkSeconds = Math.max(0, summary.work_seconds - (activeType === 'WORK' ? currentElapsed : 0));
+  baseBreakSeconds = Math.max(0, summary.break_seconds - (activeType === 'BREAK' ? currentElapsed : 0));
+  renderSummary(currentElapsed);
 }
 
 async function handleAuth(endpoint) {
@@ -108,12 +140,6 @@ async function loadHistory() {
   });
 }
 
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  return JSON.parse(atob(base64));
-}
-
 async function initApp() {
   if (!token) {
     authSection.classList.remove('hidden');
@@ -127,6 +153,7 @@ async function initApp() {
     document.getElementById('user-display').textContent = `👤 ${payload.username}`;
     const statusData = await apiRequest('/timer/status');
     setUIState(statusData ? statusData.active_session : null);
+    await loadSummary();
     await loadHistory();
   } catch (err) {
     logout();
@@ -140,18 +167,21 @@ document.getElementById('logout-btn').addEventListener('click', logout);
 document.getElementById('work-btn').addEventListener('click', async () => {
   const session = await apiRequest('/timer/work', 'POST');
   setUIState(session);
+  await loadSummary();
   await loadHistory();
 });
 
 document.getElementById('break-btn').addEventListener('click', async () => {
   const session = await apiRequest('/timer/break', 'POST');
   setUIState(session);
+  await loadSummary();
   await loadHistory();
 });
 
 document.getElementById('stop-btn').addEventListener('click', async () => {
   await apiRequest('/timer/stop', 'POST');
   setUIState(null);
+  await loadSummary();
   await loadHistory();
 });
 
