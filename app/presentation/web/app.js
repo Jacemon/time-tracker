@@ -44,7 +44,8 @@ function formatDuration(ms) {
 }
 
 function parseJwt(token) {
-  const base64Url = token.split('.');
+  const parts = token.split('.');
+  const base64Url = parts.at(1);
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
   return JSON.parse(atob(base64));
 }
