@@ -19,6 +19,10 @@ app.include_router(timer_router)
 
 app.mount("/static", StaticFiles(directory="app/presentation/web"), name="static")
 
+@app.get("/sw.js")
+async def serve_sw():
+  return FileResponse("app/presentation/web/sw.js", media_type="application/javascript")
+
 @app.get("/")
 async def serve_web():
   return FileResponse("app/presentation/web/index.html")
