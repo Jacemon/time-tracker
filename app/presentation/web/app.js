@@ -5,6 +5,7 @@ let activeType = null;
 let baseWorkSeconds = 0;
 let baseBreakSeconds = 0;
 let editingSessionId = null;
+let cachedSessions = [];
 
 const authSection = document.getElementById('auth-section');
 const appSection = document.getElementById('app-section');
@@ -18,6 +19,12 @@ const historyContainer = document.getElementById('history-container');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
 const todayTotalDisplay = document.getElementById('today-total');
+
+const tabTimerBtn = document.getElementById('tab-timer-btn');
+const tabStatsBtn = document.getElementById('tab-stats-btn');
+const viewTimer = document.getElementById('view-timer');
+const viewStats = document.getElementById('view-stats');
+const weeklyChart = document.getElementById('weekly-chart');
 
 const editModal = document.getElementById('edit-modal');
 const modalTitle = document.getElementById('modal-title');
@@ -56,6 +63,13 @@ function formatDuration(ms) {
   const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   return `${hours}:${minutes}:${seconds}`;
+}
+
+function formatShortHours(ms) {
+  const hours = ms / 3600000;
+  if (hours === 0) return '0ч';
+  if (hours < 1) return `${Math.round(ms / 60000)}м`;
+  return `${hours.toFixed(1)}ч`;
 }
 
 function toLocalInputString(isoString) {
@@ -204,9 +218,109 @@ function formatDayHeader(dateObj) {
   return dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function renderStats(sessions) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysMap = new Map();
+  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(todayStart);
+    d.setDate(todayStart.getDate() - i);
+    daysMap.set(d.toDateString(), {
+      label: dayNames.at(d.getDay()),
+      workMs: 0,
+      breakMs: 0
+    });
+  }
+
+  let weekWorkMs = 0;
+  let weekBreakMs = 0;
+  let monthWorkMs = 0;
+  let monthBreakMs = 0;
+  const activeDaysSet = new Set();
+
+  const weekLimit = new Date(todayStart);
+  weekLimit.setDate(todayStart.getDate() - 6);
+
+  const monthLimit = new Date(todayStart);
+  monthLimit.setDate(todayStart.getDate() - 29);
+
+  sessions.forEach(s => {
+    const start = new Date(s.start_time);
+    const end = s.end_time ? new Date(s.end_time) : now;
+    const diff = Math.max(0, end - start);
+    const key = start.toDateString();
+
+    if (daysMap.has(key)) {
+      const dayItem = daysMap.get(key);
+      if (s.session_type === 'WORK') {
+        dayItem.workMs += diff;
+      } else {
+        dayItem.breakMs += diff;
+      }
+    }
+
+    if (start >= weekLimit) {
+      if (s.session_type === 'WORK') {
+        weekWorkMs += diff;
+      } else {
+        weekBreakMs += diff;
+      }
+    }
+
+    if (start >= monthLimit) {
+      activeDaysSet.add(key);
+      if (s.session_type === 'WORK') {
+        monthWorkMs += diff;
+      } else {
+        monthBreakMs += diff;
+      }
+    }
+  });
+
+  document.getElementById('stat-week-work').textContent = formatDuration(weekWorkMs);
+  document.getElementById('stat-week-break').textContent = formatDuration(weekBreakMs);
+  document.getElementById('stat-week-avg').textContent = formatDuration(weekWorkMs / 7);
+
+  document.getElementById('stat-month-work').textContent = formatDuration(monthWorkMs);
+  document.getElementById('stat-month-break').textContent = formatDuration(monthBreakMs);
+  document.getElementById('stat-month-total').textContent = formatDuration(monthWorkMs + monthBreakMs);
+  document.getElementById('stat-month-days').textContent = String(activeDaysSet.size);
+
+  let maxTotalMs = 3600000;
+  daysMap.forEach(item => {
+    const total = item.workMs + item.breakMs;
+    if (total > maxTotalMs) {
+      maxTotalMs = total;
+    }
+  });
+
+  weeklyChart.innerHTML = '';
+  daysMap.forEach(item => {
+    const totalMs = item.workMs + item.breakMs;
+    const workPct = Math.round((item.workMs / maxTotalMs) * 100);
+    const breakPct = Math.round((item.breakMs / maxTotalMs) * 100);
+
+    const col = document.createElement('div');
+    col.className = 'chart-col';
+    col.innerHTML = `
+      <span class="chart-val">${formatShortHours(totalMs)}</span>
+      <div class="bars-track">
+        <div class="bar-work" style="height: ${workPct}%"></div>
+        <div class="bar-break" style="height: ${breakPct}%"></div>
+      </div>
+      <span class="chart-day">${item.label}</span>
+    `;
+    weeklyChart.appendChild(col);
+  });
+}
+
 async function loadHistory() {
   const sessions = await apiRequest('/timer/history');
   if (!sessions) return;
+  cachedSessions = sessions;
+  renderStats(cachedSessions);
   historyContainer.innerHTML = '';
 
   const groups = new Map();
@@ -294,6 +408,21 @@ async function loadHistory() {
   });
 }
 
+function switchTab(tab) {
+  if (tab === 'stats') {
+    tabTimerBtn.classList.remove('active');
+    tabStatsBtn.classList.add('active');
+    viewTimer.classList.add('hidden');
+    viewStats.classList.remove('hidden');
+    renderStats(cachedSessions);
+  } else {
+    tabStatsBtn.classList.remove('active');
+    tabTimerBtn.classList.add('active');
+    viewStats.classList.add('hidden');
+    viewTimer.classList.remove('hidden');
+  }
+}
+
 async function refreshAll() {
   const statusData = await apiRequest('/timer/status');
   setUIState(statusData ? statusData.active_session : null);
@@ -320,26 +449,29 @@ async function initApp() {
   }
 }
 
+tabTimerBtn.addEventListener('click', () => switchTab('timer'));
+tabStatsBtn.addEventListener('click', () => switchTab('stats'));
+
 document.getElementById('login-btn').addEventListener('click', () => handleAuth('login'));
 document.getElementById('register-btn').addEventListener('click', () => handleAuth('register'));
 document.getElementById('logout-btn').addEventListener('click', logout);
 document.getElementById('add-record-btn').addEventListener('click', openAddModal);
 
-document.getElementById('work-btn').addEventListener('click', async () => {
+workBtn.addEventListener('click', async () => {
   const session = await apiRequest('/timer/work', 'POST');
   setUIState(session);
   await loadSummary();
   await loadHistory();
 });
 
-document.getElementById('break-btn').addEventListener('click', async () => {
+breakBtn.addEventListener('click', async () => {
   const session = await apiRequest('/timer/break', 'POST');
   setUIState(session);
   await loadSummary();
   await loadHistory();
 });
 
-document.getElementById('stop-btn').addEventListener('click', async () => {
+stopBtn.addEventListener('click', async () => {
   await apiRequest('/timer/stop', 'POST');
   setUIState(null);
   await loadSummary();

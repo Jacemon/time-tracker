@@ -28,37 +28,92 @@
         <button id="logout-btn" class="small">Выйти</button>
       </header>
 
-      <div class="card timer-card">
-        <div id="status-badge" class="badge idle">Не активно</div>
-        <div id="timer-display" class="timer">00:00:00</div>
-        <div class="btn-group">
-          <button id="work-btn" class="work">Работа</button>
-          <button id="break-btn" class="break">Перерыв</button>
-          <button id="stop-btn" class="stop">Стоп</button>
-        </div>
+      <div class="tabs">
+        <button id="tab-timer-btn" class="tab-btn active">Таймер</button>
+        <button id="tab-stats-btn" class="tab-btn">Статистика</button>
       </div>
 
-      <div class="summary-grid">
-        <div class="card summary-card">
-          <span class="summary-label">Работа сегодня</span>
-          <strong id="today-work" class="summary-value work-text">00:00:00</strong>
+      <div id="view-timer">
+        <div class="card timer-card">
+          <div id="status-badge" class="badge idle">Не активно</div>
+          <div id="timer-display" class="timer">00:00:00</div>
+          <div class="btn-group">
+            <button id="work-btn" class="work">Работа</button>
+            <button id="break-btn" class="break">Перерыв</button>
+            <button id="stop-btn" class="stop">Стоп</button>
+          </div>
         </div>
-        <div class="card summary-card">
-          <span class="summary-label">Перерывы сегодня</span>
-          <strong id="today-break" class="summary-value break-text">00:00:00</strong>
+
+        <div class="summary-grid">
+          <div class="card summary-card">
+            <span class="summary-label">Работа сегодня</span>
+            <strong id="today-work" class="summary-value work-text">00:00:00</strong>
+          </div>
+          <div class="card summary-card">
+            <span class="summary-label">Перерывы сегодня</span>
+            <strong id="today-break" class="summary-value break-text">00:00:00</strong>
+          </div>
+          <div class="card summary-card">
+            <span class="summary-label">Всего сегодня</span>
+            <strong id="today-total" class="summary-value total-text">00:00:00</strong>
+          </div>
         </div>
-        <div class="card summary-card">
-          <span class="summary-label">Всего сегодня</span>
-          <strong id="today-total" class="summary-value total-text">00:00:00</strong>
-        </div>
+
+        <button id="add-record-btn" class="secondary add-btn">
+          <img src="/static/icons/plus.svg" class="icon" alt="">
+          <span>Добавить запись</span>
+        </button>
+
+        <div id="history-container"></div>
       </div>
 
-      <button id="add-record-btn" class="secondary add-btn">
-        <img src="/static/icons/plus.svg" class="icon" alt="">
-        <span>Добавить запись</span>
-      </button>
+      <div id="view-stats" class="hidden">
+        <div class="card">
+          <h2>Активность за 7 дней</h2>
+          <div class="chart-legend">
+            <span class="legend-item"><i class="dot work-dot"></i>Работа</span>
+            <span class="legend-item"><i class="dot break-dot"></i>Перерыв</span>
+          </div>
+          <div id="weekly-chart" class="chart-box"></div>
+        </div>
 
-      <div id="history-container"></div>
+        <div class="summary-grid">
+          <div class="card summary-card">
+            <span class="summary-label">Работа (7 дн.)</span>
+            <strong id="stat-week-work" class="summary-value work-text">00:00:00</strong>
+          </div>
+          <div class="card summary-card">
+            <span class="summary-label">Перерывы (7 дн.)</span>
+            <strong id="stat-week-break" class="summary-value break-text">00:00:00</strong>
+          </div>
+          <div class="card summary-card">
+            <span class="summary-label">Среднее в день</span>
+            <strong id="stat-week-avg" class="summary-value total-text">00:00:00</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Итоги за 30 дней</h2>
+          <div class="stats-rows">
+            <div class="stat-row">
+              <span>Чистая работа</span>
+              <strong id="stat-month-work" class="work-text">00:00:00</strong>
+            </div>
+            <div class="stat-row">
+              <span>Перерывы</span>
+              <strong id="stat-month-break" class="break-text">00:00:00</strong>
+            </div>
+            <div class="stat-row">
+              <span>Всего зафиксировано</span>
+              <strong id="stat-month-total" class="total-text">00:00:00</strong>
+            </div>
+            <div class="stat-row">
+              <span>Активных дней</span>
+              <strong id="stat-month-days">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
