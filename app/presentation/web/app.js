@@ -13,6 +13,7 @@ const statusBadge = document.getElementById('status-badge');
 const historyList = document.getElementById('history-list');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
+const todayTotalDisplay = document.getElementById('today-total');
 
 async function apiRequest(url, method = 'GET', body = null) {
   const headers = { 'Content-Type': 'application/json' };
@@ -53,8 +54,10 @@ function parseJwt(token) {
 function renderSummary(elapsedSeconds = 0) {
   const currentWork = baseWorkSeconds + (activeType === 'WORK' ? elapsedSeconds : 0);
   const currentBreak = baseBreakSeconds + (activeType === 'BREAK' ? elapsedSeconds : 0);
+  const currentTotal = currentWork + currentBreak;
   todayWorkDisplay.textContent = formatDuration(currentWork * 1000);
   todayBreakDisplay.textContent = formatDuration(currentBreak * 1000);
+  todayTotalDisplay.textContent = formatDuration(currentTotal * 1000);
 }
 
 function updateTimerTick() {

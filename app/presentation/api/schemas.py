@@ -24,3 +24,4 @@ class StatusResponse(BaseModel):
 class SummaryResponse(BaseModel):
   work_seconds: int
   break_seconds: int
+  total_seconds: int

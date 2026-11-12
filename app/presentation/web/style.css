@@ -106,31 +106,32 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
 
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
 }
 
 .summary-card {
   margin-bottom: 0;
-  padding: 16px;
+  padding: 14px 8px;
   text-align: center;
 }
 
 .summary-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #9ca3af;
   margin-bottom: 6px;
 }
 
 .summary-value {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-variant-numeric: tabular-nums;
 }
 
 .work-text { color: #10b981; }
 .break-text { color: #f59e0b; }
+.total-text { color: #3b82f6; }
 
 .history-list {
   list-style: none;

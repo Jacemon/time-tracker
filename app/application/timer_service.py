@@ -55,5 +55,6 @@ class TimerService:
           break_seconds += duration
     return {
       "work_seconds": work_seconds,
-      "break_seconds": break_seconds
+      "break_seconds": break_seconds,
+      "total_seconds": work_seconds + break_seconds
     }
