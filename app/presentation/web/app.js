@@ -27,6 +27,9 @@ const historyContainer = document.getElementById('history-container');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
 const todayTotalDisplay = document.getElementById('today-total');
+const todayProgressText = document.getElementById('today-progress-text');
+const todayBarWork = document.getElementById('today-bar-work');
+const todayBarBreak = document.getElementById('today-bar-break');
 
 const tabTimerBtn = document.getElementById('tab-timer-btn');
 const tabStatsBtn = document.getElementById('tab-stats-btn');
@@ -159,6 +162,7 @@ function renderSummary(elapsedSeconds = 0) {
   const todayNorm = getNormForDate(new Date());
   const workLimitSec = todayNorm.work_minutes * 60;
   const breakLimitSec = todayNorm.break_minutes * 60;
+  const totalNormSec = workLimitSec + breakLimitSec;
 
   const isWorkOver = workLimitSec > 0 && currentWork > workLimitSec;
   const isBreakOver = breakLimitSec > 0 && currentBreak > breakLimitSec;
@@ -173,6 +177,15 @@ function renderSummary(elapsedSeconds = 0) {
   } else {
     timerDisplay.classList.remove('overtime');
   }
+
+  const baseSec = totalNormSec > 0 ? Math.max(totalNormSec, currentTotal) : Math.max(1, currentTotal);
+  const workPct = currentTotal > 0 ? (currentWork / baseSec) * 100 : 0;
+  const breakPct = currentTotal > 0 ? (currentBreak / baseSec) * 100 : 0;
+  const totalPct = totalNormSec > 0 ? Math.round((currentTotal / totalNormSec) * 100) : (currentTotal > 0 ? 100 : 0);
+
+  todayBarWork.style.width = `${workPct.toFixed(1)}%`;
+  todayBarBreak.style.width = `${breakPct.toFixed(1)}%`;
+  todayProgressText.textContent = `${totalPct}%`;
 }
 
 function updateTimerTick() {
@@ -538,8 +551,20 @@ async function loadHistory() {
       <span class="${balClass}">${formatSignedDuration(balanceMs)}</span>
     `;
 
+    const baseMs = normMs > 0 ? Math.max(normMs, totalMs) : Math.max(1, totalMs);
+    const dayWorkPct = totalMs > 0 ? (group.workMs / baseMs) * 100 : 0;
+    const dayBreakPct = totalMs > 0 ? (group.breakMs / baseMs) * 100 : 0;
+
+    const progressTrack = document.createElement('div');
+    progressTrack.className = 'progress-track compact';
+    progressTrack.innerHTML = `
+      <div class="progress-work" style="width: ${dayWorkPct.toFixed(1)}%"></div>
+      <div class="progress-break" style="width: ${dayBreakPct.toFixed(1)}%"></div>
+    `;
+
     header.appendChild(titleRow);
     header.appendChild(statsDiv);
+    header.appendChild(progressTrack);
     card.appendChild(header);
 
     const list = document.createElement('ul');
