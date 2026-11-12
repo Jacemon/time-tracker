@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities import TimeSession, User
 from app.domain.repositories import ISessionRepository, IUserRepository
@@ -26,6 +26,19 @@ class PostgresUserRepository(IUserRepository):
 class PostgresSessionRepository(ISessionRepository):
   def __init__(self, db: AsyncSession):
     self.db = db
+
+  async def get_by_id(self, session_id: int) -> Optional[TimeSession]:
+    result = await self.db.execute(select(TimeSessionModel).where(TimeSessionModel.id == session_id))
+    model = result.scalar_one_or_none()
+    if not model:
+      return None
+    return TimeSession(
+      id=model.id,
+      user_id=model.user_id,
+      session_type=model.session_type,
+      start_time=model.start_time,
+      end_time=model.end_time
+    )
 
   async def get_active_session(self, user_id: int) -> Optional[TimeSession]:
     query = select(TimeSessionModel).where(
@@ -65,6 +78,8 @@ class PostgresSessionRepository(ISessionRepository):
   async def update(self, session: TimeSession) -> TimeSession:
     result = await self.db.execute(select(TimeSessionModel).where(TimeSessionModel.id == session.id))
     model = result.scalar_one()
+    model.session_type = session.session_type
+    model.start_time = session.start_time
     model.end_time = session.end_time
     await self.db.commit()
     await self.db.refresh(model)
@@ -75,6 +90,10 @@ class PostgresSessionRepository(ISessionRepository):
       start_time=model.start_time,
       end_time=model.end_time
     )
+
+  async def delete(self, session_id: int) -> None:
+    await self.db.execute(delete(TimeSessionModel).where(TimeSessionModel.id == session_id))
+    await self.db.commit()
 
   async def get_user_sessions(self, user_id: int) -> List[TimeSession]:
     query = select(TimeSessionModel).where(TimeSessionModel.user_id == user_id).order_by(TimeSessionModel.start_time.desc())

@@ -35,7 +35,7 @@ h1, h2 {
   font-size: 1.4rem;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 12px;
   margin-bottom: 12px;
@@ -44,6 +44,13 @@ input {
   background: #2a2a2a;
   color: #fff;
   font-size: 1rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
 }
 
 .btn-group {
@@ -133,6 +140,33 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
 .break-text { color: #f59e0b; }
 .total-text { color: #3b82f6; }
 
+.day-card {
+  padding: 18px;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.day-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.day-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .history-list {
   list-style: none;
 }
@@ -140,13 +174,63 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
 .history-item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #2a2a2a;
   font-size: 0.9rem;
+  gap: 8px;
 }
 
 .history-item:last-child {
   border-bottom: none;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-time {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  flex: none;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  background: #2a2a2a;
+  color: #ccc;
+  border-radius: 6px;
+}
+
+.icon-btn.del:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 0;
 }
 
 .error {

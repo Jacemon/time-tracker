@@ -18,6 +18,11 @@ class SessionResponse(BaseModel):
   start_time: datetime
   end_time: Optional[datetime] = None
 
+class SessionUpdateRequest(BaseModel):
+  session_type: Optional[SessionType] = None
+  start_time: Optional[datetime] = None
+  end_time: Optional[datetime] = None
+
 class StatusResponse(BaseModel):
   active_session: Optional[SessionResponse] = None
 

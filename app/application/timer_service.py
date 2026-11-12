@@ -58,3 +58,30 @@ class TimerService:
       "break_seconds": break_seconds,
       "total_seconds": work_seconds + break_seconds
     }
+
+  async def update_session(
+    self,
+    user_id: int,
+    session_id: int,
+    session_type: Optional[SessionType] = None,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None
+  ) -> TimeSession:
+    session = await self.session_repo.get_by_id(session_id)
+    if not session or session.user_id != user_id:
+      raise ValueError("Session not found")
+    if session_type is not None:
+      session.session_type = session_type
+    if start_time is not None:
+      session.start_time = start_time
+    if end_time is not None:
+      session.end_time = end_time
+    if session.end_time and session.end_time < session.start_time:
+      raise ValueError("End time cannot be before start time")
+    return await self.session_repo.update(session)
+
+  async def delete_session(self, user_id: int, session_id: int) -> None:
+    session = await self.session_repo.get_by_id(session_id)
+    if not session or session.user_id != user_id:
+      raise ValueError("Session not found")
+    await self.session_repo.delete(session_id)

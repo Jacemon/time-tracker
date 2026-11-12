@@ -50,12 +50,30 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2>История сессий</h2>
-        <ul id="history-list" class="history-list"></ul>
-      </div>
+      <div id="history-container"></div>
     </div>
   </div>
+
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-content card">
+      <h2>Редактировать запись</h2>
+      <label class="field-label">Тип</label>
+      <select id="edit-type">
+        <option value="WORK">Работа</option>
+        <option value="BREAK">Перерыв</option>
+      </select>
+      <label class="field-label">Начало</label>
+      <input type="datetime-local" id="edit-start" step="1">
+      <label class="field-label">Конец</label>
+      <input type="datetime-local" id="edit-end" step="1">
+      <div class="btn-group">
+        <button id="save-edit-btn" class="primary">Сохранить</button>
+        <button id="cancel-edit-btn" class="secondary">Отмена</button>
+      </div>
+      <p id="edit-error" class="error"></p>
+    </div>
+  </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>

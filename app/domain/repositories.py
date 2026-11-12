@@ -13,6 +13,10 @@ class IUserRepository(ABC):
 
 class ISessionRepository(ABC):
   @abstractmethod
+  async def get_by_id(self, session_id: int) -> Optional[TimeSession]:
+    pass
+
+  @abstractmethod
   async def get_active_session(self, user_id: int) -> Optional[TimeSession]:
     pass
 
@@ -22,6 +26,10 @@ class ISessionRepository(ABC):
 
   @abstractmethod
   async def update(self, session: TimeSession) -> TimeSession:
+    pass
+
+  @abstractmethod
+  async def delete(self, session_id: int) -> None:
     pass
 
   @abstractmethod
