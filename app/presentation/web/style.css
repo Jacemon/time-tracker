@@ -243,3 +243,13 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
   margin-top: 10px;
   font-size: 0.9rem;
 }
+
+html, body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior-y: contain;
+}
+
+button, input, select {
+  touch-action: manipulation;
+  font-size: 16px;
+}
