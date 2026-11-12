@@ -11,6 +11,8 @@ const appSection = document.getElementById('app-section');
 const authError = document.getElementById('auth-error');
 const timerDisplay = document.getElementById('timer-display');
 const statusBadge = document.getElementById('status-badge');
+const workBtn = document.getElementById('work-btn');
+const breakBtn = document.getElementById('break-btn');
 const historyContainer = document.getElementById('history-container');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
@@ -91,6 +93,11 @@ function updateTimerTick() {
 
 function setUIState(session) {
   clearInterval(timerInterval);
+  workBtn.disabled = false;
+  breakBtn.disabled = false;
+  workBtn.classList.remove('btn-expanded');
+  breakBtn.classList.remove('btn-expanded');
+
   if (!session) {
     activeStartTime = null;
     activeType = null;
@@ -100,10 +107,20 @@ function setUIState(session) {
     renderSummary(0);
     return;
   }
+
   activeStartTime = new Date(session.start_time);
   activeType = session.session_type;
   statusBadge.textContent = session.session_type === 'WORK' ? 'Работа' : 'Перерыв';
   statusBadge.className = `badge ${session.session_type}`;
+
+  if (session.session_type === 'WORK') {
+    workBtn.disabled = true;
+    breakBtn.classList.add('btn-expanded');
+  } else if (session.session_type === 'BREAK') {
+    breakBtn.disabled = true;
+    workBtn.classList.add('btn-expanded');
+  }
+
   updateTimerTick();
   timerInterval = setInterval(updateTimerTick, 1000);
 }
