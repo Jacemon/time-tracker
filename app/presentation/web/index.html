@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <div id="auth-section" class="card hidden">
+      <h1>Time Tracker</h1>
+      <input type="text" id="username" placeholder="Логин" autocomplete="username">
+      <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+      <div class="btn-group">
+        <button id="login-btn" class="primary">Войти</button>
+        <button id="register-btn" class="secondary">Регистрация</button>
+      </div>
+      <p id="auth-error" class="error"></p>
+    </div>
+
+    <div id="app-section" class="hidden">
+      <header class="header">
+        <span id="user-display"></span>
+        <button id="logout-btn" class="small">Выйти</button>
+      </header>
+
+      <div class="card timer-card">
+        <div id="status-badge" class="badge idle">Не активно</div>
+        <div id="timer-display" class="timer">00:00:00</div>
+        <div class="btn-group">
+          <button id="work-btn" class="work">Работа</button>
+          <button id="break-btn" class="break">Перерыв</button>
+          <button id="stop-btn" class="stop">Стоп</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>История сессий</h2>
+        <ul id="history-list" class="history-list"></ul>
+      </div>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

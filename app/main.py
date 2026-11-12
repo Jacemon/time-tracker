@@ -1,0 +1,28 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from app.infrastructure.database import Base, engine
+from app.infrastructure import models
+from app.presentation.api.routers import auth_router, timer_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+  async with engine.begin() as conn:
+    await conn.run_sync(Base.metadata.create_all)
+  yield
+
+app = FastAPI(title="Time Tracker API", lifespan=lifespan)
+
+app.include_router(auth_router)
+app.include_router(timer_router)
+
+app.mount("/static", StaticFiles(directory="app/presentation/web"), name="static")
+
+@app.get("/")
+async def serve_web():
+  return FileResponse("app/presentation/web/index.html")
+
+@app.get("/health")
+async def health_check():
+  return {"status": "ok", "message": "Backend is running"}
