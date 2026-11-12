@@ -234,13 +234,14 @@ async function loadHistory() {
       const start = new Date(s.start_time);
       const end = s.end_time ? new Date(s.end_time) : new Date();
       const duration = formatDuration(end - start);
-      const typeLabel = s.session_type === 'WORK' ? '🟢 Работа' : '🟡 Перерыв';
+      const typeIcon = s.session_type === 'WORK' ? '/static/icons/work.svg' : '/static/icons/break.svg';
+      const typeText = s.session_type === 'WORK' ? 'Работа' : 'Перерыв';
       const startStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const endStr = s.end_time ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'сейчас';
 
       const info = document.createElement('div');
       info.className = 'item-info';
-      info.innerHTML = `<span>${typeLabel}</span><span class="item-time">${startStr} — ${endStr}</span>`;
+      info.innerHTML = `<span class="type-row"><img src="${typeIcon}" class="icon" alt="">${typeText}</span><span class="item-time">${startStr} — ${endStr}</span>`;
 
       const right = document.createElement('div');
       right.className = 'item-right';
@@ -251,14 +252,14 @@ async function loadHistory() {
 
       const editBtn = document.createElement('button');
       editBtn.className = 'icon-btn';
-      editBtn.textContent = '✏️';
+      editBtn.innerHTML = '<img src="/static/icons/edit.svg" class="icon" alt="">';
       editBtn.title = 'Редактировать';
       editBtn.addEventListener('click', () => openEditModal(s));
       right.appendChild(editBtn);
 
       const delBtn = document.createElement('button');
       delBtn.className = 'icon-btn del';
-      delBtn.textContent = '🗑️';
+      delBtn.innerHTML = '<img src="/static/icons/trash.svg" class="icon" alt="">';
       delBtn.title = 'Удалить';
       delBtn.addEventListener('click', () => deleteSession(s.id));
       right.appendChild(delBtn);
@@ -290,7 +291,9 @@ async function initApp() {
   appSection.classList.remove('hidden');
   try {
     const payload = parseJwt(token);
-    document.getElementById('user-display').textContent = `👤 ${payload.username}`;
+    const userDisplay = document.getElementById('user-display');
+    userDisplay.className = 'user-badge';
+    userDisplay.innerHTML = `<img src="/static/icons/user.svg" class="icon" alt=""><span>${payload.username}</span>`;
     await refreshAll();
   } catch (err) {
     logout();

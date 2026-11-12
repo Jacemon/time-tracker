@@ -5,6 +5,11 @@
   font-family: system-ui, -apple-system, sans-serif;
 }
 
+html, body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior-y: contain;
+}
+
 body {
   background-color: #121212;
   color: #e0e0e0;
@@ -43,7 +48,8 @@ input, select {
   border: 1px solid #333;
   background: #2a2a2a;
   color: #fff;
-  font-size: 1rem;
+  font-size: 16px;
+  touch-action: manipulation;
 }
 
 .field-label {
@@ -63,10 +69,11 @@ button {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  touch-action: manipulation;
 }
 
 button:hover {
@@ -146,6 +153,15 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
 .break-text { color: #f59e0b; }
 .total-text { color: #3b82f6; }
 
+.add-btn {
+  width: 100%;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .day-card {
   padding: 18px;
 }
@@ -208,18 +224,39 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
   gap: 8px;
 }
 
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.type-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  padding: 6px 8px;
+  padding: 7px;
   font-size: 0.85rem;
   background: #2a2a2a;
   color: #ccc;
   border-radius: 6px;
-}
-
-.add-btn {
-  width: 100%;
-  margin-bottom: 16px;
 }
 
 .icon-btn.del:hover {
@@ -248,14 +285,4 @@ button.small { flex: none; padding: 6px 12px; font-size: 0.85rem; background: #3
   color: #ef4444;
   margin-top: 10px;
   font-size: 0.9rem;
-}
-
-html, body {
-  touch-action: pan-x pan-y;
-  overscroll-behavior-y: contain;
-}
-
-button, input, select {
-  touch-action: manipulation;
-  font-size: 16px;
 }
