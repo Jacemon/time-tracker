@@ -18,7 +18,8 @@ let userSettings = {
   default_work_minutes: 480,
   default_break_minutes: 40,
   weekend_days: [5, 6],
-  timezone: 'UTC'
+  timezone: 'UTC',
+  timezone_auto: true
 };
 let dailyNormsMap = new Map();
 
@@ -56,6 +57,9 @@ const editError = document.getElementById('edit-error');
 const settingsModal = document.getElementById('settings-modal');
 const setWorkTimeInput = document.getElementById('set-work-time');
 const setBreakTimeInput = document.getElementById('set-break-time');
+const setTimezoneInput = document.getElementById('set-timezone');
+const setTimezoneAutoInput = document.getElementById('set-timezone-auto');
+const timezoneOptionsList = document.getElementById('timezone-options');
 const settingsError = document.getElementById('settings-error');
 
 const dayNormModal = document.getElementById('day-norm-modal');
@@ -290,6 +294,33 @@ function getBrowserTimezone() {
   }
 }
 
+const COMMON_TIMEZONES = [
+  'UTC', 'Europe/Kaliningrad', 'Europe/Moscow', 'Europe/Samara',
+  'Asia/Yekaterinburg', 'Asia/Omsk', 'Asia/Krasnoyarsk', 'Asia/Irkutsk',
+  'Asia/Yakutsk', 'Asia/Vladivostok', 'Asia/Magadan', 'Asia/Kamchatka',
+  'Europe/Kyiv', 'Europe/Minsk', 'Asia/Almaty', 'Asia/Tashkent', 'Asia/Baku',
+  'Europe/London', 'Europe/Berlin', 'Europe/Paris', 'Asia/Dubai',
+  'Asia/Shanghai', 'Asia/Tokyo', 'America/New_York', 'America/Los_Angeles'
+];
+
+function populateTimezoneOptions() {
+  if (!timezoneOptionsList) return;
+  let names = COMMON_TIMEZONES;
+  try {
+    if (typeof Intl.supportedValuesOf === 'function') {
+      names = Intl.supportedValuesOf('timeZone');
+    }
+  } catch (err) {
+    names = COMMON_TIMEZONES;
+  }
+  timezoneOptionsList.innerHTML = '';
+  names.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    timezoneOptionsList.appendChild(option);
+  });
+}
+
 async function loadSettingsData() {
   const [settings, norms] = await Promise.all([
     apiRequest('/settings'),
@@ -298,7 +329,7 @@ async function loadSettingsData() {
   if (settings) {
     userSettings = settings;
     const browserTz = getBrowserTimezone();
-    if (browserTz && browserTz !== userSettings.timezone) {
+    if (userSettings.timezone_auto && browserTz && browserTz !== userSettings.timezone) {
       try {
         const updated = await apiRequest('/settings', 'PUT', {
           default_work_minutes: userSettings.default_work_minutes,
@@ -371,6 +402,9 @@ function openSettingsModal() {
   checkboxes.forEach(cb => {
     cb.checked = userSettings.weekend_days.includes(parseInt(cb.value, 10));
   });
+  setTimezoneAutoInput.checked = userSettings.timezone_auto;
+  setTimezoneInput.value = userSettings.timezone_auto ? getBrowserTimezone() : userSettings.timezone;
+  setTimezoneInput.disabled = userSettings.timezone_auto;
   settingsModal.classList.remove('hidden');
 }
 
@@ -803,15 +837,30 @@ document.getElementById('cancel-settings-btn').addEventListener('click', () => {
   settingsModal.classList.add('hidden');
 });
 
+setTimezoneAutoInput.addEventListener('change', () => {
+  setTimezoneInput.disabled = setTimezoneAutoInput.checked;
+  if (setTimezoneAutoInput.checked) {
+    setTimezoneInput.value = getBrowserTimezone();
+  }
+});
+
 document.getElementById('save-settings-btn').addEventListener('click', async () => {
   settingsError.textContent = '';
+  const timezoneAuto = setTimezoneAutoInput.checked;
+  const timezoneValue = timezoneAuto ? getBrowserTimezone() : setTimezoneInput.value.trim();
+  if (!timezoneAuto && !timezoneValue) {
+    settingsError.textContent = 'Укажите часовой пояс или включите автоопределение';
+    return;
+  }
   try {
     const checkboxes = document.querySelectorAll('#set-weekends input[type="checkbox"]:checked');
     const weekendDays = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
     const payload = {
       default_work_minutes: timeInputToMinutes(setWorkTimeInput.value),
       default_break_minutes: timeInputToMinutes(setBreakTimeInput.value),
-      weekend_days: weekendDays
+      weekend_days: weekendDays,
+      timezone: timezoneValue,
+      timezone_auto: timezoneAuto
     };
     await apiRequest('/settings', 'PUT', payload);
     settingsModal.classList.add('hidden');
@@ -841,4 +890,5 @@ document.getElementById('save-day-norm-btn').addEventListener('click', async () 
   }
 });
 
+populateTimezoneOptions();
 initApp();

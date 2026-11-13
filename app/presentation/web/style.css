@@ -501,6 +501,39 @@ button.btn-expanded {
   accent-color: #3b82f6;
 }
 
+.tz-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tz-row input[type="text"] {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.tz-row input[type="text"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tz-auto-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tz-auto-label input {
+  width: auto;
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
 .progress-card {
   padding: 14px 16px;
 }

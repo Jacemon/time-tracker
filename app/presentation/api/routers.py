@@ -140,7 +140,8 @@ async def get_settings(
     default_work_minutes=settings.default_work_minutes,
     default_break_minutes=settings.default_break_minutes,
     weekend_days=weekend_list,
-    timezone=settings.timezone
+    timezone=settings.timezone,
+    timezone_auto=settings.timezone_auto
   )
 
 @settings_router.put("", response_model=SettingsResponse)
@@ -155,14 +156,16 @@ async def update_settings(
       default_work_minutes=data.default_work_minutes,
       default_break_minutes=data.default_break_minutes,
       weekend_days=data.weekend_days,
-      timezone=data.timezone
+      timezone=data.timezone,
+      timezone_auto=data.timezone_auto
     )
     weekend_list = [int(x) for x in settings.weekend_days.split(",") if x.strip()]
     return SettingsResponse(
       default_work_minutes=settings.default_work_minutes,
       default_break_minutes=settings.default_break_minutes,
       weekend_days=weekend_list,
-      timezone=settings.timezone
+      timezone=settings.timezone,
+      timezone_auto=settings.timezone_auto
     )
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

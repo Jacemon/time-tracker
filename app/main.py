@@ -15,6 +15,9 @@ async def lifespan(app: FastAPI):
       await conn.execute(text(
         "ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) NOT NULL DEFAULT 'UTC'"
       ))
+      await conn.execute(text(
+        "ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS timezone_auto BOOLEAN NOT NULL DEFAULT TRUE"
+      ))
   yield
 
 app = FastAPI(title="Time Tracker API", lifespan=lifespan)

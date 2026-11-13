@@ -183,6 +183,12 @@
         <label class="day-check"><input type="checkbox" value="5" checked><span>Сб</span></label>
         <label class="day-check"><input type="checkbox" value="6" checked><span>Вс</span></label>
       </div>
+      <label class="field-label">Часовой пояс</label>
+      <div class="tz-row">
+        <input type="text" id="set-timezone" list="timezone-options" placeholder="Europe/Moscow">
+        <label class="tz-auto-label"><input type="checkbox" id="set-timezone-auto"><span>Авто (из браузера)</span></label>
+      </div>
+      <datalist id="timezone-options"></datalist>
       <div class="btn-group">
         <button id="save-settings-btn" class="primary">Сохранить</button>
         <button id="cancel-settings-btn" class="secondary">Отмена</button>

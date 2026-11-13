@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.domain.entities import SessionType
 from app.infrastructure.database import Base
@@ -28,6 +28,7 @@ class UserSettingsModel(Base):
   default_break_minutes: Mapped[int] = mapped_column(Integer, default=40, nullable=False)
   weekend_days: Mapped[str] = mapped_column(String(20), default="5,6", nullable=False)
   timezone: Mapped[str] = mapped_column(String(50), default="UTC", nullable=False)
+  timezone_auto: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 class DailyNormModel(Base):
   __tablename__ = "daily_norms"
