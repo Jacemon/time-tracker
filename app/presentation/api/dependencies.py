@@ -16,7 +16,8 @@ def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
 
 def get_timer_service(db: AsyncSession = Depends(get_db)) -> TimerService:
   session_repo = PostgresSessionRepository(db)
-  return TimerService(session_repo)
+  settings_repo = PostgresSettingsRepository(db)
+  return TimerService(session_repo, settings_repo)
 
 def get_settings_service(db: AsyncSession = Depends(get_db)) -> SettingsService:
   settings_repo = PostgresSettingsRepository(db)

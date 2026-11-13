@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Optional
+from zoneinfo import available_timezones
 from app.domain.entities import DailyNorm, UserSettings
 from app.domain.repositories import ISettingsRepository
 
@@ -14,17 +15,22 @@ class SettingsService:
     user_id: int,
     default_work_minutes: int,
     default_break_minutes: int,
-    weekend_days: List[int]
+    weekend_days: List[int],
+    timezone: Optional[str] = None
   ) -> UserSettings:
     if default_work_minutes < 0 or default_break_minutes < 0:
       raise ValueError("Minutes cannot be negative")
+    if timezone is not None and timezone not in available_timezones():
+      raise ValueError("Unknown timezone")
     valid_days = sorted({d for d in weekend_days if 0 <= d <= 6})
     weekend_str = ",".join(str(d) for d in valid_days)
+    current = await self.settings_repo.get_settings(user_id)
     settings = UserSettings(
       user_id=user_id,
       default_work_minutes=default_work_minutes,
       default_break_minutes=default_break_minutes,
-      weekend_days=weekend_str
+      weekend_days=weekend_str,
+      timezone=timezone if timezone is not None else current.timezone
     )
     return await self.settings_repo.save_settings(settings)
 
