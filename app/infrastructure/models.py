@@ -27,6 +27,7 @@ class UserSettingsModel(Base):
   default_work_minutes: Mapped[int] = mapped_column(Integer, default=480, nullable=False)
   default_break_minutes: Mapped[int] = mapped_column(Integer, default=40, nullable=False)
   weekend_days: Mapped[str] = mapped_column(String(20), default="5,6", nullable=False)
+  timezone: Mapped[str] = mapped_column(String(50), default="UTC", nullable=False)
 
 class DailyNormModel(Base):
   __tablename__ = "daily_norms"

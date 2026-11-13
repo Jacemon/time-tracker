@@ -17,7 +17,8 @@ let liveDayBreakBarEl = null;
 let userSettings = {
   default_work_minutes: 480,
   default_break_minutes: 40,
-  weekend_days: [5, 6]
+  weekend_days: [5, 6],
+  timezone: 'UTC'
 };
 let dailyNormsMap = new Map();
 
@@ -281,6 +282,14 @@ function setUIState(session) {
   timerInterval = setInterval(updateTimerTick, 1000);
 }
 
+function getBrowserTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch (err) {
+    return 'UTC';
+  }
+}
+
 async function loadSettingsData() {
   const [settings, norms] = await Promise.all([
     apiRequest('/settings'),
@@ -288,6 +297,22 @@ async function loadSettingsData() {
   ]);
   if (settings) {
     userSettings = settings;
+    const browserTz = getBrowserTimezone();
+    if (browserTz && browserTz !== userSettings.timezone) {
+      try {
+        const updated = await apiRequest('/settings', 'PUT', {
+          default_work_minutes: userSettings.default_work_minutes,
+          default_break_minutes: userSettings.default_break_minutes,
+          weekend_days: userSettings.weekend_days,
+          timezone: browserTz
+        });
+        if (updated) {
+          userSettings = updated;
+        }
+      } catch (err) {
+        // оставляем текущую таймзону, если синхронизация не удалась
+      }
+    }
   }
   dailyNormsMap.clear();
   if (norms) {

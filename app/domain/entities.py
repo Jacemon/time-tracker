@@ -27,6 +27,7 @@ class UserSettings:
   default_work_minutes: int = 480
   default_break_minutes: int = 40
   weekend_days: str = "5,6"
+  timezone: str = "UTC"
 
 @dataclass
 class DailyNorm:

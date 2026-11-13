@@ -1,24 +1,39 @@
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Union
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from app.domain.entities import SessionType, TimeSession
-from app.domain.repositories import ISessionRepository
+from app.domain.repositories import ISessionRepository, ISettingsRepository
 
 class TimerService:
-  def __init__(self, session_repo: ISessionRepository):
+  def __init__(self, session_repo: ISessionRepository, settings_repo: ISettingsRepository):
     self.session_repo = session_repo
+    self.settings_repo = settings_repo
+
+  async def _get_user_tz(self, user_id: int) -> ZoneInfo:
+    settings = await self.settings_repo.get_settings(user_id)
+    try:
+      return ZoneInfo(settings.timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+      return ZoneInfo("UTC")
 
   @staticmethod
-  def _next_midnight(moment: datetime) -> datetime:
-    moment_utc = moment.astimezone(timezone.utc)
-    day_start = moment_utc.replace(hour=0, minute=0, second=0, microsecond=0)
-    return day_start + timedelta(days=1)
+  def _next_midnight(moment: datetime, tz: ZoneInfo) -> datetime:
+    local_moment = moment.astimezone(tz)
+    local_day_start = local_moment.replace(hour=0, minute=0, second=0, microsecond=0)
+    return (local_day_start + timedelta(days=1)).astimezone(timezone.utc)
 
   @classmethod
-  def _split_into_day_segments(cls, start_time: datetime, end_time: datetime) -> List[tuple]:
+  def _day_start(cls, moment: datetime, tz: ZoneInfo) -> datetime:
+    local_moment = moment.astimezone(tz)
+    local_day_start = local_moment.replace(hour=0, minute=0, second=0, microsecond=0)
+    return local_day_start.astimezone(timezone.utc)
+
+  @classmethod
+  def _split_into_day_segments(cls, start_time: datetime, end_time: datetime, tz: ZoneInfo) -> List[tuple]:
     segments = []
     cursor = start_time
     while True:
-      next_midnight = cls._next_midnight(cursor)
+      next_midnight = cls._next_midnight(cursor, tz)
       if next_midnight >= end_time:
         segments.append((cursor, end_time))
         break
@@ -28,9 +43,12 @@ class TimerService:
 
   async def _split_overnight_active_session(self, user_id: int) -> None:
     active = await self.session_repo.get_active_session(user_id)
+    if not active:
+      return
+    tz = await self._get_user_tz(user_id)
     while active:
       now = datetime.now(timezone.utc)
-      next_midnight = self._next_midnight(active.start_time)
+      next_midnight = self._next_midnight(active.start_time, tz)
       if next_midnight > now:
         break
       active.end_time = next_midnight
@@ -78,8 +96,9 @@ class TimerService:
 
   async def get_today_summary(self, user_id: int) -> Dict[str, Union[int, Optional[datetime]]]:
     await self._split_overnight_active_session(user_id)
+    tz = await self._get_user_tz(user_id)
     now = datetime.now(timezone.utc)
-    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_start = self._day_start(now, tz)
     sessions = await self.session_repo.get_user_sessions(user_id)
     work_seconds = 0
     break_seconds = 0
@@ -113,7 +132,8 @@ class TimerService:
   ) -> TimeSession:
     if end_time <= start_time:
       raise ValueError("End time must be after start time")
-    segments = self._split_into_day_segments(start_time, end_time)
+    tz = await self._get_user_tz(user_id)
+    segments = self._split_into_day_segments(start_time, end_time, tz)
     first_session: Optional[TimeSession] = None
     for seg_start, seg_end in segments:
       created = await self.session_repo.create(TimeSession(
@@ -148,7 +168,8 @@ class TimerService:
       raise ValueError("End time cannot be before start time")
     if session.end_time is None:
       return await self.session_repo.update(session)
-    segments = self._split_into_day_segments(session.start_time, session.end_time)
+    tz = await self._get_user_tz(user_id)
+    segments = self._split_into_day_segments(session.start_time, session.end_time, tz)
     seg_start, seg_end = segments[0]
     session.start_time = seg_start
     session.end_time = seg_end
