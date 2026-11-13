@@ -16,7 +16,8 @@ class SettingsService:
     default_work_minutes: int,
     default_break_minutes: int,
     weekend_days: List[int],
-    timezone: Optional[str] = None
+    timezone: Optional[str] = None,
+    timezone_auto: Optional[bool] = None
   ) -> UserSettings:
     if default_work_minutes < 0 or default_break_minutes < 0:
       raise ValueError("Minutes cannot be negative")
@@ -30,7 +31,8 @@ class SettingsService:
       default_work_minutes=default_work_minutes,
       default_break_minutes=default_break_minutes,
       weekend_days=weekend_str,
-      timezone=timezone if timezone is not None else current.timezone
+      timezone=timezone if timezone is not None else current.timezone,
+      timezone_auto=timezone_auto if timezone_auto is not None else current.timezone_auto
     )
     return await self.settings_repo.save_settings(settings)
 

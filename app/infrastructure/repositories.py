@@ -124,7 +124,8 @@ class PostgresSettingsRepository(ISettingsRepository):
       default_work_minutes=model.default_work_minutes,
       default_break_minutes=model.default_break_minutes,
       weekend_days=model.weekend_days,
-      timezone=model.timezone
+      timezone=model.timezone,
+      timezone_auto=model.timezone_auto
     )
 
   async def save_settings(self, settings: UserSettings) -> UserSettings:
@@ -136,7 +137,8 @@ class PostgresSettingsRepository(ISettingsRepository):
         default_work_minutes=settings.default_work_minutes,
         default_break_minutes=settings.default_break_minutes,
         weekend_days=settings.weekend_days,
-        timezone=settings.timezone
+        timezone=settings.timezone,
+        timezone_auto=settings.timezone_auto
       )
       self.db.add(model)
     else:
@@ -144,6 +146,7 @@ class PostgresSettingsRepository(ISettingsRepository):
       model.default_break_minutes = settings.default_break_minutes
       model.weekend_days = settings.weekend_days
       model.timezone = settings.timezone
+      model.timezone_auto = settings.timezone_auto
     await self.db.commit()
     await self.db.refresh(model)
     return UserSettings(
@@ -151,7 +154,8 @@ class PostgresSettingsRepository(ISettingsRepository):
       default_work_minutes=model.default_work_minutes,
       default_break_minutes=model.default_break_minutes,
       weekend_days=model.weekend_days,
-      timezone=model.timezone
+      timezone=model.timezone,
+      timezone_auto=model.timezone_auto
     )
 
   async def get_daily_norms(self, user_id: int) -> List[DailyNorm]:

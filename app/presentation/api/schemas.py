@@ -42,12 +42,14 @@ class SettingsResponse(BaseModel):
   default_break_minutes: int
   weekend_days: List[int]
   timezone: str
+  timezone_auto: bool
 
 class SettingsUpdateRequest(BaseModel):
   default_work_minutes: int
   default_break_minutes: int
   weekend_days: List[int]
   timezone: Optional[str] = None
+  timezone_auto: Optional[bool] = None
 
 class DailyNormResponse(BaseModel):
   date_str: str
