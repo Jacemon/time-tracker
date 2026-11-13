@@ -4,6 +4,7 @@ let activeStartTime = null;
 let activeType = null;
 let baseWorkSeconds = 0;
 let baseBreakSeconds = 0;
+let todayStartTime = null;
 let editingSessionId = null;
 let editingNormDateStr = null;
 let cachedSessions = [];
@@ -182,7 +183,8 @@ function renderSummary(elapsedSeconds = 0) {
     estimatedLeaveDisplay.textContent = 'Норма выполнена';
     estimatedLeaveDisplay.className = 'leave-value done';
   } else {
-    const leaveDate = new Date(Date.now() + remainingSec * 1000);
+    const leaveBase = todayStartTime ? todayStartTime.getTime() : Date.now();
+    const leaveDate = new Date(leaveBase + totalNormSec * 1000);
     estimatedLeaveDisplay.textContent = leaveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     estimatedLeaveDisplay.className = 'leave-value';
   }
@@ -304,6 +306,7 @@ async function loadSummary() {
   const currentElapsed = activeStartTime ? Math.max(0, Math.floor((Date.now() - activeStartTime.getTime()) / 1000)) : 0;
   baseWorkSeconds = Math.max(0, summary.work_seconds - (activeType === 'WORK' ? currentElapsed : 0));
   baseBreakSeconds = Math.max(0, summary.break_seconds - (activeType === 'BREAK' ? currentElapsed : 0));
+  todayStartTime = summary.day_start_time ? new Date(summary.day_start_time) : null;
   renderSummary(currentElapsed);
 }
 

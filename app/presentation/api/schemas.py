@@ -35,6 +35,7 @@ class SummaryResponse(BaseModel):
   work_seconds: int
   break_seconds: int
   total_seconds: int
+  day_start_time: Optional[datetime] = None
 
 class SettingsResponse(BaseModel):
   default_work_minutes: int
