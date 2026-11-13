@@ -8,6 +8,11 @@ let editingSessionId = null;
 let editingNormDateStr = null;
 let cachedSessions = [];
 
+let liveSessionDurationEl = null;
+let liveDayHeaderStatsEl = null;
+let liveDayWorkBarEl = null;
+let liveDayBreakBarEl = null;
+
 let userSettings = {
   default_work_minutes: 480,
   default_break_minutes: 40,
@@ -27,6 +32,8 @@ const historyContainer = document.getElementById('history-container');
 const todayWorkDisplay = document.getElementById('today-work');
 const todayBreakDisplay = document.getElementById('today-break');
 const todayTotalDisplay = document.getElementById('today-total');
+const todayRemainingDisplay = document.getElementById('today-remaining');
+const estimatedLeaveDisplay = document.getElementById('estimated-leave-time');
 const todayProgressText = document.getElementById('today-progress-text');
 const todayBarWork = document.getElementById('today-bar-work');
 const todayBarBreak = document.getElementById('today-bar-break');
@@ -164,6 +171,22 @@ function renderSummary(elapsedSeconds = 0) {
   const breakLimitSec = todayNorm.break_minutes * 60;
   const totalNormSec = workLimitSec + breakLimitSec;
 
+  const remainingSec = Math.max(0, totalNormSec - currentTotal);
+  todayRemainingDisplay.textContent = formatDuration(remainingSec * 1000);
+  todayRemainingDisplay.classList.toggle('balance-pos', totalNormSec > 0 && remainingSec === 0);
+
+  if (totalNormSec === 0) {
+    estimatedLeaveDisplay.textContent = 'Выходной';
+    estimatedLeaveDisplay.className = 'leave-value done';
+  } else if (remainingSec === 0) {
+    estimatedLeaveDisplay.textContent = 'Норма выполнена';
+    estimatedLeaveDisplay.className = 'leave-value done';
+  } else {
+    const leaveDate = new Date(Date.now() + remainingSec * 1000);
+    estimatedLeaveDisplay.textContent = leaveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    estimatedLeaveDisplay.className = 'leave-value';
+  }
+
   const isWorkOver = workLimitSec > 0 && currentWork > workLimitSec;
   const isBreakOver = breakLimitSec > 0 && currentBreak > breakLimitSec;
 
@@ -186,6 +209,22 @@ function renderSummary(elapsedSeconds = 0) {
   todayBarWork.style.width = `${workPct.toFixed(1)}%`;
   todayBarBreak.style.width = `${breakPct.toFixed(1)}%`;
   todayProgressText.textContent = `${totalPct}%`;
+
+  if (liveDayHeaderStatsEl) {
+    const balanceMs = (currentTotal - totalNormSec) * 1000;
+    const balClass = balanceMs >= 0 ? 'balance-pos' : 'balance-neg';
+    liveDayHeaderStatsEl.innerHTML = `
+      <span class="work-text">Р: ${formatDuration(currentWork * 1000)}</span>
+      <span class="break-text">П: ${formatDuration(currentBreak * 1000)}</span>
+      <span class="total-text">Всего: ${formatDuration(currentTotal * 1000)}</span>
+      <span class="${balClass}">${formatSignedDuration(balanceMs)}</span>
+    `;
+  }
+
+  if (liveDayWorkBarEl && liveDayBreakBarEl) {
+    liveDayWorkBarEl.style.width = `${workPct.toFixed(1)}%`;
+    liveDayBreakBarEl.style.width = `${breakPct.toFixed(1)}%`;
+  }
 }
 
 function updateTimerTick() {
@@ -197,6 +236,9 @@ function updateTimerTick() {
   }
   const diff = Date.now() - activeStartTime.getTime();
   timerDisplay.textContent = formatDuration(diff);
+  if (liveSessionDurationEl) {
+    liveSessionDurationEl.textContent = formatDuration(diff);
+  }
   renderSummary(Math.max(0, Math.floor(diff / 1000)));
 }
 
@@ -356,43 +398,42 @@ function formatDayHeader(dateObj) {
 function renderStats(sessions) {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const daysMap = new Map();
-  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const pyWeekday = getJsWeekdayAsPython(todayStart);
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(todayStart);
-    d.setDate(todayStart.getDate() - i);
+  const mondayStart = new Date(todayStart);
+  mondayStart.setDate(todayStart.getDate() - pyWeekday);
+
+  const sundayEnd = new Date(mondayStart);
+  sundayEnd.setDate(mondayStart.getDate() + 7);
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const daysMap = new Map();
+  const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mondayStart);
+    d.setDate(mondayStart.getDate() + i);
     daysMap.set(getDateKey(d), {
       date: d,
-      label: dayNames.at(d.getDay()),
+      label: dayNames.at(i),
       workMs: 0,
       breakMs: 0
     });
   }
 
-  const dailyTotalsMap = new Map();
   let weekWorkMs = 0;
   let weekBreakMs = 0;
   let monthWorkMs = 0;
   let monthBreakMs = 0;
-  const activeDaysSet = new Set();
-
-  const weekLimit = new Date(todayStart);
-  weekLimit.setDate(todayStart.getDate() - 6);
-
-  const monthLimit = new Date(todayStart);
-  monthLimit.setDate(todayStart.getDate() - 29);
+  const monthActiveDaysMap = new Map();
 
   sessions.forEach(s => {
     const start = new Date(s.start_time);
     const end = s.end_time ? new Date(s.end_time) : now;
     const diff = Math.max(0, end - start);
     const key = getDateKey(start);
-
-    if (!dailyTotalsMap.has(key)) {
-      dailyTotalsMap.set(key, { date: new Date(start.getFullYear(), start.getMonth(), start.getDate()), totalMs: 0 });
-    }
-    dailyTotalsMap.get(key).totalMs += diff;
 
     if (daysMap.has(key)) {
       const dayItem = daysMap.get(key);
@@ -403,7 +444,7 @@ function renderStats(sessions) {
       }
     }
 
-    if (start >= weekLimit) {
+    if (start >= mondayStart && start < sundayEnd) {
       if (s.session_type === 'WORK') {
         weekWorkMs += diff;
       } else {
@@ -411,8 +452,14 @@ function renderStats(sessions) {
       }
     }
 
-    if (start >= monthLimit) {
-      activeDaysSet.add(key);
+    if (start >= monthStart && start < nextMonthStart) {
+      if (!monthActiveDaysMap.has(key)) {
+        monthActiveDaysMap.set(key, {
+          date: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+          totalMs: 0
+        });
+      }
+      monthActiveDaysMap.get(key).totalMs += diff;
       if (s.session_type === 'WORK') {
         monthWorkMs += diff;
       } else {
@@ -422,27 +469,21 @@ function renderStats(sessions) {
   });
 
   let weekBalanceMs = 0;
-  daysMap.forEach((item, key) => {
-    const norm = getNormForDate(item.date);
-    const normMs = (norm.work_minutes + norm.break_minutes) * 60000;
+  daysMap.forEach(item => {
     const actualMs = item.workMs + item.breakMs;
-    if (actualMs > 0 || normMs > 0) {
+    if (actualMs > 0) {
+      const norm = getNormForDate(item.date);
+      const normMs = (norm.work_minutes + norm.break_minutes) * 60000;
       weekBalanceMs += (actualMs - normMs);
     }
   });
 
   let monthBalanceMs = 0;
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(todayStart);
-    d.setDate(todayStart.getDate() - i);
-    const key = getDateKey(d);
-    const norm = getNormForDate(d);
+  monthActiveDaysMap.forEach(item => {
+    const norm = getNormForDate(item.date);
     const normMs = (norm.work_minutes + norm.break_minutes) * 60000;
-    const actualMs = dailyTotalsMap.has(key) ? dailyTotalsMap.get(key).totalMs : 0;
-    if (actualMs > 0 || normMs > 0) {
-      monthBalanceMs += (actualMs - normMs);
-    }
-  }
+    monthBalanceMs += (item.totalMs - normMs);
+  });
 
   document.getElementById('stat-week-work').textContent = formatDuration(weekWorkMs);
   document.getElementById('stat-week-break').textContent = formatDuration(weekBreakMs);
@@ -459,7 +500,7 @@ function renderStats(sessions) {
   monthBalEl.textContent = formatSignedDuration(monthBalanceMs);
   monthBalEl.className = monthBalanceMs >= 0 ? 'balance-pos' : 'balance-neg';
 
-  document.getElementById('stat-month-days').textContent = String(activeDaysSet.size);
+  document.getElementById('stat-month-days').textContent = String(monthActiveDaysMap.size);
 
   let maxTotalMs = 3600000;
   daysMap.forEach(item => {
@@ -488,7 +529,6 @@ function renderStats(sessions) {
     weeklyChart.appendChild(col);
   });
 }
-
 async function loadHistory() {
   const sessions = await apiRequest('/timer/history');
   if (!sessions) return;
@@ -496,12 +536,19 @@ async function loadHistory() {
   renderStats(cachedSessions);
   historyContainer.innerHTML = '';
 
+  liveSessionDurationEl = null;
+  liveDayHeaderStatsEl = null;
+  liveDayWorkBarEl = null;
+  liveDayBreakBarEl = null;
+
+  const todayKey = getDateKey(new Date());
   const groups = new Map();
+
   sessions.forEach(s => {
     const startDate = new Date(s.start_time);
     const key = getDateKey(startDate);
     if (!groups.has(key)) {
-      groups.set(key, { date: startDate, items: [], workMs: 0, breakMs: 0 });
+      groups.set(key, { key: key, date: startDate, items: [], workMs: 0, breakMs: 0 });
     }
     const group = groups.get(key);
     group.items.push(s);
@@ -562,6 +609,12 @@ async function loadHistory() {
       <div class="progress-break" style="width: ${dayBreakPct.toFixed(1)}%"></div>
     `;
 
+    if (group.key === todayKey) {
+      liveDayHeaderStatsEl = statsDiv;
+      liveDayWorkBarEl = progressTrack.querySelector('.progress-work');
+      liveDayBreakBarEl = progressTrack.querySelector('.progress-break');
+    }
+
     header.appendChild(titleRow);
     header.appendChild(statsDiv);
     header.appendChild(progressTrack);
@@ -590,7 +643,10 @@ async function loadHistory() {
       right.className = 'item-right';
 
       const durEl = document.createElement('strong');
-      durEl.textContent = s.end_time ? duration : 'Идет...';
+      durEl.textContent = duration;
+      if (!s.end_time) {
+        liveSessionDurationEl = durEl;
+      }
       right.appendChild(durEl);
 
       const editBtn = document.createElement('button');

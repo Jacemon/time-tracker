@@ -138,9 +138,13 @@ button.btn-expanded {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.summary-grid.stats-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .summary-card {
@@ -543,4 +547,27 @@ button.btn-expanded {
   height: 100%;
   background: #f59e0b;
   transition: width 0.3s ease;
+}
+
+.leave-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.leave-card .summary-label {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+}
+
+.leave-value {
+  font-size: 1.15rem;
+  color: #3b82f6;
+  font-variant-numeric: tabular-nums;
+}
+
+.leave-value.done {
+  color: #10b981;
+  font-size: 0.95rem;
 }
