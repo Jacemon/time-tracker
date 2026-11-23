@@ -41,6 +41,31 @@ class TimerService:
       cursor = next_midnight
     return segments
 
+  async def _ensure_daily_norm(self, user_id: int, date_str: str) -> None:
+    norms = await self.settings_repo.get_daily_norms(user_id)
+    if any(n.date_str == date_str for n in norms):
+      return
+    settings = await self.settings_repo.get_settings(user_id)
+    from app.domain.entities import DailyNorm
+    await self.settings_repo.save_daily_norm(DailyNorm(
+      id=None,
+      user_id=user_id,
+      date_str=date_str,
+      work_minutes=settings.default_work_minutes,
+      break_minutes=settings.default_break_minutes
+    ))
+
+  async def _ensure_norms_for_sessions(self, user_id: int, sessions: List[TimeSession], tz: ZoneInfo) -> None:
+    dates_to_check = set()
+    for s in sessions:
+      local_start = s.start_time.astimezone(tz)
+      dates_to_check.add(local_start.strftime("%Y-%m-%d"))
+      if s.end_time:
+        local_end = s.end_time.astimezone(tz)
+        dates_to_check.add(local_end.strftime("%Y-%m-%d"))
+    for date_str in dates_to_check:
+      await self._ensure_daily_norm(user_id, date_str)
+
   async def _split_overnight_active_session(self, user_id: int) -> None:
     active = await self.session_repo.get_active_session(user_id)
     if not active:
@@ -53,6 +78,8 @@ class TimerService:
         break
       active.end_time = next_midnight
       await self.session_repo.update(active)
+      local_start = active.start_time.astimezone(tz)
+      await self._ensure_daily_norm(user_id, local_start.strftime("%Y-%m-%d"))
       new_session = TimeSession(
         id=None,
         user_id=user_id,
@@ -64,6 +91,9 @@ class TimerService:
   async def start_session(self, user_id: int, session_type: SessionType) -> TimeSession:
     await self._split_overnight_active_session(user_id)
     now = datetime.now(timezone.utc)
+    tz = await self._get_user_tz(user_id)
+    local_now = now.astimezone(tz)
+    await self._ensure_daily_norm(user_id, local_now.strftime("%Y-%m-%d"))
     active = await self.session_repo.get_active_session(user_id)
     if active:
       if active.session_type == session_type:
@@ -92,12 +122,17 @@ class TimerService:
 
   async def get_history(self, user_id: int) -> List[TimeSession]:
     await self._split_overnight_active_session(user_id)
-    return await self.session_repo.get_user_sessions(user_id)
+    sessions = await self.session_repo.get_user_sessions(user_id)
+    tz = await self._get_user_tz(user_id)
+    await self._ensure_norms_for_sessions(user_id, sessions, tz)
+    return sessions
 
   async def get_today_summary(self, user_id: int) -> Dict[str, Union[int, Optional[datetime]]]:
     await self._split_overnight_active_session(user_id)
     tz = await self._get_user_tz(user_id)
     now = datetime.now(timezone.utc)
+    local_now = now.astimezone(tz)
+    await self._ensure_daily_norm(user_id, local_now.strftime("%Y-%m-%d"))
     day_start = self._day_start(now, tz)
     sessions = await self.session_repo.get_user_sessions(user_id)
     work_seconds = 0
@@ -134,6 +169,9 @@ class TimerService:
       raise ValueError("End time must be after start time")
     tz = await self._get_user_tz(user_id)
     segments = self._split_into_day_segments(start_time, end_time, tz)
+    for seg_start, _ in segments:
+      local_seg = seg_start.astimezone(tz)
+      await self._ensure_daily_norm(user_id, local_seg.strftime("%Y-%m-%d"))
     first_session: Optional[TimeSession] = None
     for seg_start, seg_end in segments:
       created = await self.session_repo.create(TimeSession(
@@ -170,6 +208,9 @@ class TimerService:
       return await self.session_repo.update(session)
     tz = await self._get_user_tz(user_id)
     segments = self._split_into_day_segments(session.start_time, session.end_time, tz)
+    for seg_start, _ in segments:
+      local_seg = seg_start.astimezone(tz)
+      await self._ensure_daily_norm(user_id, local_seg.strftime("%Y-%m-%d"))
     seg_start, seg_end = segments[0]
     session.start_time = seg_start
     session.end_time = seg_end
