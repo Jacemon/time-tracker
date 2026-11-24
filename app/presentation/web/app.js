@@ -68,7 +68,7 @@ const dayWorkTimeInput = document.getElementById('day-work-time');
 const dayBreakTimeInput = document.getElementById('day-break-time');
 const dayNormError = document.getElementById('day-norm-error');
 
-async function apiRequest(url, method = 'GET', body = null) {
+async function apiRequest(url, method = 'GET', body = null, retries = 1) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -77,7 +77,18 @@ async function apiRequest(url, method = 'GET', body = null) {
   if (body) {
     options.body = JSON.stringify(body);
   }
-  const res = await fetch(url, options);
+
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return apiRequest(url, method, body, retries - 1);
+    }
+    throw new Error('Нет соединения с сервером. Проверьте интернет.');
+  }
+
   if (res.status === 401) {
     logout();
     return null;
