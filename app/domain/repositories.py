@@ -21,6 +21,10 @@ class ISessionRepository(ABC):
     pass
 
   @abstractmethod
+  async def get_active_sessions(self, user_id: int) -> List[TimeSession]:
+    pass
+
+  @abstractmethod
   async def create(self, session: TimeSession) -> TimeSession:
     pass
 

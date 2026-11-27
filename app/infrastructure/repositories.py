@@ -41,12 +41,17 @@ class PostgresSessionRepository(ISessionRepository):
     )
 
   async def get_active_session(self, user_id: int) -> Optional[TimeSession]:
-    query = select(TimeSessionModel).where(
-      TimeSessionModel.user_id == user_id,
-      TimeSessionModel.end_time.is_(None)
+    query = (
+      select(TimeSessionModel)
+      .where(
+        TimeSessionModel.user_id == user_id,
+        TimeSessionModel.end_time.is_(None)
+      )
+      .order_by(TimeSessionModel.start_time.desc(), TimeSessionModel.id.desc())
+      .limit(1)
     )
     result = await self.db.execute(query)
-    model = result.scalar_one_or_none()
+    model = result.scalars().first()
     if not model:
       return None
     return TimeSession(
@@ -56,6 +61,28 @@ class PostgresSessionRepository(ISessionRepository):
       start_time=model.start_time,
       end_time=model.end_time
     )
+
+  async def get_active_sessions(self, user_id: int) -> List[TimeSession]:
+    query = (
+      select(TimeSessionModel)
+      .where(
+        TimeSessionModel.user_id == user_id,
+        TimeSessionModel.end_time.is_(None)
+      )
+      .order_by(TimeSessionModel.start_time.desc(), TimeSessionModel.id.desc())
+    )
+    result = await self.db.execute(query)
+    models = result.scalars().all()
+    return [
+      TimeSession(
+        id=m.id,
+        user_id=m.user_id,
+        session_type=m.session_type,
+        start_time=m.start_time,
+        end_time=m.end_time
+      )
+      for m in models
+    ]
 
   async def create(self, session: TimeSession) -> TimeSession:
     model = TimeSessionModel(

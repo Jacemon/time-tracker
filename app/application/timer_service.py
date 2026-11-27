@@ -66,8 +66,20 @@ class TimerService:
     for date_str in dates_to_check:
       await self._ensure_daily_norm(user_id, date_str)
 
+  async def _heal_active_sessions(self, user_id: int, now: Optional[datetime] = None) -> Optional[TimeSession]:
+    current_time = now or datetime.now(timezone.utc)
+    active_sessions = await self.session_repo.get_active_sessions(user_id)
+    if not active_sessions:
+      return None
+    primary = active_sessions[0]
+    for stale in active_sessions[1:]:
+      stale.end_time = max(current_time, stale.start_time)
+      await self.session_repo.update(stale)
+    return primary
+
   async def _split_overnight_active_session(self, user_id: int) -> None:
-    active = await self.session_repo.get_active_session(user_id)
+    now = datetime.now(timezone.utc)
+    active = await self._heal_active_sessions(user_id, now)
     if not active:
       return
     tz = await self._get_user_tz(user_id)
@@ -94,7 +106,7 @@ class TimerService:
     tz = await self._get_user_tz(user_id)
     local_now = now.astimezone(tz)
     await self._ensure_daily_norm(user_id, local_now.strftime("%Y-%m-%d"))
-    active = await self.session_repo.get_active_session(user_id)
+    active = await self._heal_active_sessions(user_id, now)
     if active:
       if active.session_type == session_type:
         return active
@@ -110,15 +122,16 @@ class TimerService:
 
   async def stop_timer(self, user_id: int) -> Optional[TimeSession]:
     await self._split_overnight_active_session(user_id)
-    active = await self.session_repo.get_active_session(user_id)
+    now = datetime.now(timezone.utc)
+    active = await self._heal_active_sessions(user_id, now)
     if not active:
       return None
-    active.end_time = datetime.now(timezone.utc)
+    active.end_time = now
     return await self.session_repo.update(active)
 
   async def get_status(self, user_id: int) -> Optional[TimeSession]:
     await self._split_overnight_active_session(user_id)
-    return await self.session_repo.get_active_session(user_id)
+    return await self._heal_active_sessions(user_id)
 
   async def get_history(self, user_id: int) -> List[TimeSession]:
     await self._split_overnight_active_session(user_id)
