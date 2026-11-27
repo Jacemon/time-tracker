@@ -1,11 +1,18 @@
 import os
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.domain.entities import SessionType, TimeSession
 from app.infrastructure.models import Base
 from app.infrastructure.repositories import PostgresSessionRepository
+
+
+def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
+  if dt is None:
+    return None
+  return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 
 
 @pytest_asyncio.fixture
@@ -68,10 +75,10 @@ async def test_crud_and_user_isolation(db_session: AsyncSession):
   ))
   created.end_time = t1
   updated = await repo.update(created)
-  assert updated.end_time == t1
+  assert _as_utc(updated.end_time) == t1
   fetched = await repo.get_by_id(created.id)
   assert fetched is not None
-  assert fetched.end_time == t1
+  assert _as_utc(fetched.end_time) == t1
   user1_sessions = await repo.get_user_sessions(1)
   assert len(user1_sessions) == 1
   assert user1_sessions[0].id == created.id
