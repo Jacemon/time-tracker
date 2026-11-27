@@ -1,11 +1,17 @@
+import os
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+
 from datetime import datetime, timezone
 import pytest
 from app.domain.entities import SessionType, TimeSession, UserSettings
 from tests.fakes import FakeSessionRepository, FakeSettingsRepository
 
+
 @pytest.fixture
 def fixed_now() -> datetime:
   return datetime(2026, 11, 27, 15, 0, 0, tzinfo=timezone.utc)
+
 
 @pytest.fixture
 def default_settings() -> UserSettings:
@@ -18,13 +24,16 @@ def default_settings() -> UserSettings:
     timezone_auto=False
   )
 
+
 @pytest.fixture
 def session_repo() -> FakeSessionRepository:
   return FakeSessionRepository()
 
+
 @pytest.fixture
 def settings_repo(default_settings: UserSettings) -> FakeSettingsRepository:
   return FakeSettingsRepository(settings_by_user={1: default_settings})
+
 
 @pytest.fixture
 def sample_work_session(fixed_now: datetime) -> TimeSession:

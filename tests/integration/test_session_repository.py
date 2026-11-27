@@ -7,6 +7,7 @@ from app.domain.entities import SessionType, TimeSession
 from app.infrastructure.models import Base
 from app.infrastructure.repositories import PostgresSessionRepository
 
+
 @pytest_asyncio.fixture
 async def db_session():
   db_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
@@ -19,6 +20,7 @@ async def db_session():
   async with engine.begin() as conn:
     await conn.run_sync(Base.metadata.drop_all)
   await engine.dispose()
+
 
 @pytest.mark.asyncio
 async def test_get_active_session_returns_latest_when_multiple_open(db_session: AsyncSession):
@@ -43,6 +45,7 @@ async def test_get_active_session_returns_latest_when_multiple_open(db_session: 
   assert active.id == s2.id
   active_list = await repo.get_active_sessions(1)
   assert [s.id for s in active_list] == [s2.id, s1.id]
+
 
 @pytest.mark.asyncio
 async def test_crud_and_user_isolation(db_session: AsyncSession):
