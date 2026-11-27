@@ -1,7 +1,33 @@
 from copy import deepcopy
 from typing import Dict, List, Optional
-from app.domain.entities import DailyNorm, TimeSession, UserSettings
-from app.domain.repositories import ISessionRepository, ISettingsRepository
+from app.domain.entities import DailyNorm, TimeSession, User, UserSettings
+from app.domain.repositories import ISessionRepository, ISettingsRepository, IUserRepository
+
+
+class FakeUserRepository(IUserRepository):
+  def __init__(self, users: Optional[List[User]] = None):
+    self._users: Dict[int, User] = {}
+    self._next_id = 1
+    for u in users or []:
+      item = deepcopy(u)
+      if item.id is None:
+        item.id = self._next_id
+      self._next_id = max(self._next_id, item.id + 1)
+      self._users[item.id] = item
+
+  async def get_by_username(self, username: str) -> Optional[User]:
+    for u in self._users.values():
+      if u.username == username:
+        return deepcopy(u)
+    return None
+
+  async def create(self, user: User) -> User:
+    item = deepcopy(user)
+    item.id = self._next_id
+    self._next_id += 1
+    self._users[item.id] = item
+    return deepcopy(item)
+
 
 class FakeSessionRepository(ISessionRepository):
   def __init__(self, sessions: Optional[List[TimeSession]] = None):
@@ -52,6 +78,7 @@ class FakeSessionRepository(ISessionRepository):
     items = [deepcopy(s) for s in self._sessions.values() if s.user_id == user_id]
     items.sort(key=lambda s: s.start_time, reverse=True)
     return items
+
 
 class FakeSettingsRepository(ISettingsRepository):
   def __init__(
