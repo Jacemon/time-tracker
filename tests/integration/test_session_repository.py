@@ -1,11 +1,8 @@
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import pytest
-import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities import SessionType, TimeSession
-from app.infrastructure.models import Base
 from app.infrastructure.repositories import PostgresSessionRepository
 
 
@@ -13,20 +10,6 @@ def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
   if dt is None:
     return None
   return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
-
-
-@pytest_asyncio.fixture
-async def db_session():
-  db_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-  engine = create_async_engine(db_url)
-  async with engine.begin() as conn:
-    await conn.run_sync(Base.metadata.create_all)
-  session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-  async with session_factory() as session:
-    yield session
-  async with engine.begin() as conn:
-    await conn.run_sync(Base.metadata.drop_all)
-  await engine.dispose()
 
 
 @pytest.mark.asyncio
